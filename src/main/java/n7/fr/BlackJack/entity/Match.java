@@ -1,4 +1,4 @@
-import persdevance.*;
+import persistence.*;
 
 @Entity
 public class Match {
