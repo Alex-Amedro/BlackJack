@@ -1,4 +1,7 @@
-import persistence.*;
+package n7.fr.BlackJack.entity;
+
+import java.util.*;
+import jakarta.persistence.*;
 
 @Entity 
 public class Table {
@@ -19,13 +22,13 @@ public class Table {
     @OneToMany
     private Collection<Message> messages;
     
-    private Dictionary<Joueur, int> scores;
+    private Map<Joueur, Integer> scores;
 
     public Table() {
         this.joueurs = new ArrayList<>();
         this.invitations = new ArrayList<>();
         this.messages = new ArrayList<>();
-        this.scores = new Dictionary<>();
+        this.scores = new Hashtable();
     }
 
     public void finish() {

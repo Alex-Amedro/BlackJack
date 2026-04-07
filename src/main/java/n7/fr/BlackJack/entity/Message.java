@@ -1,4 +1,6 @@
-import persistence.*;
+package n7.fr.BlackJack.entity;
+
+import jakarta.persistence.*;
 
 @Entity
 public class Message {

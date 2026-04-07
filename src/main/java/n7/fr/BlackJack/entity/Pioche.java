@@ -1,4 +1,7 @@
-import persistence.*;
+package n7.fr.BlackJack.entity;
+
+import java.util.*;
+import jakarta.persistence.*;
 
 @Entity 
 public class Pioche{
@@ -8,7 +11,7 @@ public class Pioche{
     private int id;
 
     @OneToMany
-    private Collection<Carte> cartes;
+    private List<Carte> cartes;
 
     @OneToOne(mappedBy = "pioche")
     private Table table;
