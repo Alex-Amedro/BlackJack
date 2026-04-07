@@ -1,3 +1,8 @@
+package n7.fr.BlackJack.entity;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
 import jakarta.persistence.*;
 
 @Entity 
@@ -20,7 +25,7 @@ public class Joueur {
     private Collection<Match> matchs;
 
     @OneToMany 
-    private Collection<Invitations> invitations;
+    private Collection<Invitation> invitations;
 
     @OneToMany
     private Collection<Message> messages;

@@ -1,3 +1,6 @@
+package n7.fr.BlackJack.entity;
+
+import java.util.*;
 import jakarta.persistence.*;
 
 @Entity 
@@ -10,7 +13,7 @@ public class Main {
     @OneToOne(mappedBy = "main")
     private Joueur joueur;
 
-    @oneToMany
+    @OneToMany
     private Collection<Carte> cartes;
 
     public Main() {

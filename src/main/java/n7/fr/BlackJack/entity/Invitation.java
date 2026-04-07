@@ -1,4 +1,6 @@
-import persistence.*;
+package n7.fr.BlackJack.entity;
+
+import jakarta.persistence.*;
 
 @Entity
 public class Invitation {
@@ -32,7 +34,7 @@ public class Invitation {
     public void Refused() {
         this.status = "Refusé";
     }
-    public bool isValid() {
+    public Boolean isValid() {
         return "Attente".equals(this.status);
     }
     public void decay() {
