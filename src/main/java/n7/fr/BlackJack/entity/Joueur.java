@@ -36,6 +36,7 @@ public class Joueur {
         this.invitations = new ArrayList<>();
         this.messages = new ArrayList<>();
         this.matchs = new ArrayList<>();
+        this.main = new Main();
     }
 
     public Joueur(String pseudo) {
@@ -46,13 +47,25 @@ public class Joueur {
         this.matchs = new ArrayList<>();
     }
 
-    public int getId() { return id; }
+    public int getId() { return this.id; }
     public void setId(int id) { this.id = id; }
-    public int getSolde() { return solde; }
+
+    public int getSolde() { return this.solde; }
     public void setSolde(int solde) { this.solde = solde; }
-    public Main getMain() { return main; }
+
+    public Main getMain() { return this.main; }
     public void setMain(Main main) { this.main = main; }
     public void clearMain() { this.main = null; }
-    public String getPseudo() { return pseudo; }
+
+    public String getPseudo() { return this.pseudo; }
     public void setPseudo(String pseudo) { this.pseudo = pseudo; }
+
+    public Collection<Invitation> getInvitations() {return this.invitations;}
+    public void addInvitation(Invitation invit) {this.invitations.add(invit);}
+    
+    public Collection<Message> getMessages() {return this.messages;}
+    public void addMessages(Message sms) {this.messages.add(sms);}
+    
+    public Collection<Match> getMatchs() {return this.matchs;}
+    public void addMatch(Match game) {this.matchs.add(game);}
 }
