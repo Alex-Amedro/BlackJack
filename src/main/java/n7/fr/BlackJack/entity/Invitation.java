@@ -8,7 +8,9 @@ public class Invitation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     private String status; 
+    
     @ManyToOne
     private Joueur expediteur;
 
