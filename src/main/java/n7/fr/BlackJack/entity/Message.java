@@ -13,18 +13,17 @@ public class Message {
 
     @ManyToOne
     private Joueur auteur;
-
     @ManyToOne
-    private Table table;
+    private Joueur receveur;
 
     public Message() {
     }
 
-    public Message(String date, String contenu, Joueur auteur, Table table) {
+    public Message(String date, String contenu, Joueur auteur, Joueur receveur) {
         this.date = date;
         this.contenu = contenu;
         this.auteur = auteur;
-        this.table = table;
+        this.receveur = receveur;
     }
 
     public String getDate() { return date; }
