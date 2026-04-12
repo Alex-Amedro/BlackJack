@@ -13,13 +13,10 @@ public class Joueur {
     private int id;
     
     private String pseudo;
+
+    private String mdp; 
+    
     private int solde;
-
-    @OneToOne
-    private Main main;
-
-    @OneToMany
-    private Table table;
 
     @ManyToMany
     private Collection<Match> matchs;

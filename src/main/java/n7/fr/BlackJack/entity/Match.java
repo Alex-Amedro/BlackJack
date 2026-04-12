@@ -13,7 +13,6 @@ public class Match {
     @OneToMany
     private Collection<Joueur> joueurs;
 
-
     private Map<Joueur, Integer> scores;
 
 
