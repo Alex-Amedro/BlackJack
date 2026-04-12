@@ -1,4 +1,4 @@
-package n7.fr.BlackJack.controller; //fait par ia ce fichier 
+package n7.fr.BlackJack.entity.controller; //fait par ia ce fichier 
 
 import n7.fr.BlackJack.entity.Utilisateur;
 import n7.fr.BlackJack.repository.UtilisateurRepository;
