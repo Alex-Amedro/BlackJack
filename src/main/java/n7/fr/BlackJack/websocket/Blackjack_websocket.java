@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.IOException;
 
 @ServerEndpoint("/ws/blackjack/{idTable}/{pseudo}")
-public class BlackjackEndpoint {
+public class Blackjack_websocket {
 
     private static final Map<String, TableDeBlackjack> tablesActives = new ConcurrentHashMap<>();
     
