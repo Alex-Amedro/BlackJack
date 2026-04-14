@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+blackjack/package-lock.json
+blackjack/package.json
+

@@ -2,21 +2,15 @@ package n7.fr.BlackJack;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import n7.fr.BlackJack.entity.Joueur;
 import n7.fr.BlackJack.entity.Table;
@@ -26,16 +20,19 @@ import n7.fr.BlackJack.entity.Table;
 @CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
 public class Facade {
 
+    //Collections qui sont thread-safe
     private final Map<Integer, Joueur> joueurs;
     private final Map<Integer, Table> tables;
     private final Map<Integer, Set<Integer>> tableJoueurs;
+
+    //Séquences qui sont thread-safe
     private final AtomicInteger joueurIdSequence;
     private final AtomicInteger tableIdSequence;
 
     public Facade() {
-        this.joueurs = new LinkedHashMap<>();
-        this.tables = new LinkedHashMap<>();
-        this.tableJoueurs = new LinkedHashMap<>();
+        this.joueurs = new ConcurrentHashMap<>();
+        this.tables = new ConcurrentHashMap<>();
+        this.tableJoueurs = new ConcurrentHashMap<>();
         this.joueurIdSequence = new AtomicInteger(1);
         this.tableIdSequence = new AtomicInteger(1);
     }
@@ -69,7 +66,7 @@ public class Facade {
         int id = this.tableIdSequence.getAndIncrement();
         table.setId(id);
         this.tables.put(id, table);
-        this.tableJoueurs.put(id, new LinkedHashSet<>());
+        this.tableJoueurs.put(id, ConcurrentHashMap.newKeySet());
         return ResponseEntity.status(HttpStatus.CREATED).body(table);
     }
 
@@ -113,17 +110,17 @@ public class Facade {
 
     @GetMapping("/tables/{tableId}/joueurs")
     public ResponseEntity<Collection<Joueur>> listerJoueursTable(@PathVariable("tableId") int tableId) {
-        if (!this.tables.containsKey(tableId)) {
+        Set<Integer> currentTableJoueurs = this.tableJoueurs.get(tableId);
+        if (currentTableJoueurs == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        Collection<Joueur> membres = new ArrayList<>();
-        for (Integer joueurId : this.tableJoueurs.get(tableId)) {
-            Joueur joueur = this.joueurs.get(joueurId);
-            if (joueur != null) {
-                membres.add(joueur);
-            }
-        }
+        // Functional approach (Stream) for cleaner lookup and mapping
+        Collection<Joueur> membres = currentTableJoueurs.stream()
+                .map(this.joueurs::get)
+                .filter(joueur -> joueur != null) // Safety check if a user is randomly missing
+                .collect(Collectors.toList());
+        
         return ResponseEntity.ok(membres);
     }
 }
