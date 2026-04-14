@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import jakarta.persistence.*;
+import n7.fr.BlackJack.game.Main;
 
 @Entity 
 public class Joueur {
@@ -26,6 +27,8 @@ public class Joueur {
 
     @OneToMany
     private Collection<Message> messages;
+
+    private Main main;
     
 
     public Joueur() {

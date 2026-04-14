@@ -17,15 +17,15 @@ public class Invitation {
     @ManyToOne
     private Joueur destinataire;
 
-    String tableId
+    String tableId;
 
     public Invitation() {   
     }
 
-    public Invitation(Joueur expediteur, Joueur destinataire, string tableID) {
+    public Invitation(Joueur expediteur, Joueur destinataire, String tableId) {
         this.expediteur = expediteur;
         this.destinataire = destinataire;
-        this.tableID = tableID;
+        this.tableId = tableId;
         this.status = "Attente"; 
     }
     
