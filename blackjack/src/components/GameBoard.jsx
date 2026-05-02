@@ -22,6 +22,32 @@ function GameBoard({ user, table, onLogout }) {
     message: 'Place your bet to start'
   });
 
+  // Gestion du formulaire de mise
+  const [betAmount, setBetAmount] = useState('');
+
+  const handlePlaceBet = (amount) => {
+    if (amount > 0 && amount <= gameState.playerBalance) {
+      // Envoyer au backend via API
+      fetch(`/api/tables/${table.id}/bet?pseudo=${user.username}&amount=${amount}`, {
+        method: 'POST'
+      });
+      // Le backend répondra via WebSocket avec le nouvel état
+      setBetAmount('');
+    }
+  };
+
+  const handleHit = () => {
+    fetch(`/api/tables/${table.id}/hit?pseudo=${user.username}`, {
+      method: 'POST'
+    });
+  };
+
+  const handleStand = () => {
+    fetch(`/api/tables/${table.id}/stand?pseudo=${user.username}`, {
+      method: 'POST'
+    });
+  };
+
   // Simule la réception de données (à remplacer par WebSocket)
   useEffect(() => {
     // Pour la démo: charger des données simulées
@@ -100,14 +126,16 @@ function GameBoard({ user, table, onLogout }) {
                   placeholder="Enter amount"
                   min="1"
                   max={gameState.playerBalance}
+                  value={betAmount}
+                  onChange={(e) => setBetAmount(Number(e.target.value))}
                 />
               </div>
               <div className="quick-bets">
-                <button className="quick-bet">$10</button>
-                <button className="quick-bet">$50</button>
-                <button className="quick-bet">$100</button>
+                <button className="quick-bet" onClick={() => handlePlaceBet(10)}>$10</button>
+                <button className="quick-bet" onClick={() => handlePlaceBet(50)}>$50</button>
+                <button className="quick-bet" onClick={() => handlePlaceBet(100)}>$100</button>
               </div>
-              <button className="place-bet-btn">Place Bet</button>
+              <button className="place-bet-btn" onClick={() => handlePlaceBet(betAmount)}>Place Bet</button>
             </div>
             <p className="waiting-text">⏳ Waiting for other players...</p>
           </div>
@@ -184,8 +212,8 @@ function GameBoard({ user, table, onLogout }) {
 
             {/* BOUTONS D'ACTION */}
             <div className="action-buttons">
-              <button className="action-btn hit-btn">HIT</button>
-              <button className="action-btn stand-btn">STAND</button>
+              <button className="action-btn hit-btn" onClick={handleHit}>HIT</button>
+              <button className="action-btn stand-btn" onClick={handleStand}>STAND</button>
             </div>
 
             {/* MESSAGE */}
