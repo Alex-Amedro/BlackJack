@@ -7,24 +7,31 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
   const [selectedTable, setSelectedTable] = useState(null);
 
   useEffect(() => {
-    // Simulate fetching available tables
-    const timer = setTimeout(() => {
-      setTables([
-        { id: 1, name: 'Table 1', players: 1, maxPlayers: 6 },
-        { id: 2, name: 'Table 2', players: 2, maxPlayers: 6 },
-        { id: 3, name: 'Table 3', players: 0, maxPlayers: 6 },
-      ]);
-      setLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
+    // Fetch vraies tables depuis le backend
+    fetch('http://localhost:8080/api/tables')
+      .then(res => res.json())
+      .then(data => {
+        setTables(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Erreur chargement tables:', err);
+        setLoading(false);
+      });
   }, []);
 
   const handleJoinTable = (table) => {
     setSelectedTable(table.id);
-    setTimeout(() => {
-      onTable(table);
-    }, 1000);
+    // Appeler l'API pour rejoindre la table
+    fetch(`http://localhost:8080/api/tables/${table.id}/join?pseudo=${user.username}`, {
+      method: 'POST'
+    })
+      .then(() => {
+        setTimeout(() => {
+          onTable({ ...table, tableId: table.id });
+        }, 500);
+      })
+      .catch(err => console.error('Erreur join table:', err));
   };
 
   return (

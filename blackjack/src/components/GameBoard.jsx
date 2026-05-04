@@ -1,8 +1,9 @@
-//fait par ia 
+//fait par ia
 import { useState, useEffect } from 'react';
 import '../assets/card_deck/2_coeur.png';
 import '../assets/card_deck/pioche_bleue.png';
 import './GameBoard.css';
+import * as websocket from '../services/websocket';
 
 function GameBoard({ user, table, onLogout }) {
   // État du jeu (recevra les données du WebSocket/Backend)
