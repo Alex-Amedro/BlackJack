@@ -13,6 +13,10 @@ public class Match {
     @OneToMany
     private Collection<Joueur> joueurs;
 
+    @ElementCollection
+    @CollectionTable(name = "match_scores", joinColumns = @JoinColumn(name = "match_id"))
+    @MapKeyJoinColumn(name = "joueur_id")
+    @Column(name = "score")
     private Map<Joueur, Integer> scores;
 
 

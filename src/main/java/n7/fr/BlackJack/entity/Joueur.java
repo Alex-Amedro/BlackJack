@@ -15,19 +15,20 @@ public class Joueur {
     
     private String pseudo;
 
-    private String mdp; 
-    
+    private String mdp;
+
     private int solde;
 
-    @ManyToMany
+    @Transient
     private Collection<Match> matchs;
 
-    @OneToMany 
+    @Transient
     private Collection<Invitation> invitations;
 
-    @OneToMany
+    @Transient
     private Collection<Message> messages;
 
+    @Transient
     private Main main;
     
 
@@ -59,6 +60,9 @@ public class Joueur {
 
     public String getPseudo() { return this.pseudo; }
     public void setPseudo(String pseudo) { this.pseudo = pseudo; }
+
+    public String getMdp() { return this.mdp; }
+    public void setMdp(String mdp) { this.mdp = mdp; }
 
     public Collection<Invitation> getInvitations() {return this.invitations;}
     public void addInvitation(Invitation invit) {this.invitations.add(invit);}

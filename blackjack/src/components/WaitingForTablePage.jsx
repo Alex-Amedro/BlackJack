@@ -22,16 +22,22 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
 
   const handleJoinTable = (table) => {
     setSelectedTable(table.id);
-    // Appeler l'API pour rejoindre la table
-    fetch(`http://localhost:8080/api/tables/${table.id}/join?pseudo=${user.username}`, {
+    // On n'appelle plus l'API REST qui crée des problèmes de désynchronisation
+    // On passe directement sur la GameBoard qui ouvrira le WebSocket
+    setTimeout(() => {
+      onTable({ ...table, tableId: table.id });
+    }, 500);
+  };
+
+  const handleCreateTable = () => {
+    fetch('http://localhost:8080/api/tables', {
       method: 'POST'
     })
-      .then(() => {
-        setTimeout(() => {
-          onTable({ ...table, tableId: table.id });
-        }, 500);
+      .then(res => res.json())
+      .then(newTable => {
+        setTables([...tables, newTable]);
       })
-      .catch(err => console.error('Erreur join table:', err));
+      .catch(err => console.error('Erreur création table:', err));
   };
 
   return (
@@ -49,6 +55,9 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
       <main className="waiting-main">
         <div className="waiting-content">
           <h2>Find a Table</h2>
+          <button onClick={handleCreateTable} style={{ marginBottom: '20px', padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
+            + Create New Table
+          </button>
 
           {loading ? (
             <div className="loading-state">
@@ -68,7 +77,7 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
                     <div className="table-info">
                       <h3>{table.name}</h3>
                       <p className="players-count">
-                        {table.players} / {table.maxPlayers} players
+                        {table.playerCount} / {table.maxPlayers} players
                       </p>
                       <div className="player-slots">
                         {Array.from({ length: table.maxPlayers }).map(
@@ -76,7 +85,7 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
                             <div
                               key={i}
                               className={`slot ${
-                                i < table.players ? 'filled' : 'empty'
+                                i < table.playerCount ? 'filled' : 'empty'
                               }`}
                             />
                           )

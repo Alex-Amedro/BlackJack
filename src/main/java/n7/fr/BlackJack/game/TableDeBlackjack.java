@@ -23,7 +23,6 @@ public class TableDeBlackjack {
         this.joueursMains = new HashMap<>();
         this.mises = new HashMap<>();
         this.soldes = new HashMap<>();
-        this.joueursTerminesMise = new HashMap<>();
         this.joueursTermines = new HashMap<>();
         this.mancheTerminee = false;
         this.numeroManche = 0;
@@ -78,13 +77,6 @@ public class TableDeBlackjack {
         for (Boolean termine : joueursTermines.values()) {
             if (!termine) return false;
         }
-        return true;
-    }
-
-    public boolean allPlayerBet(){
-        for (Boolean termineMise : joueursTerminesMise.values()){
-            if (!termineMise) return false;
-        }    
         return true;
     }
 

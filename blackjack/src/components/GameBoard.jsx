@@ -25,55 +25,56 @@ function GameBoard({ user, table, onLogout }) {
 
   // Gestion du formulaire de mise
   const [betAmount, setBetAmount] = useState('');
+  const [betError, setBetError] = useState('');
+  const [betMessage, setBetMessage] = useState('');
 
   const handlePlaceBet = (amount) => {
-    if (amount > 0 && amount <= gameState.playerBalance) {
-      // Envoyer au backend via API
-      fetch(`/api/tables/${table.id}/bet?pseudo=${user.username}&amount=${amount}`, {
-        method: 'POST'
-      });
-      // Le backend répondra via WebSocket avec le nouvel état
-      setBetAmount('');
+    amount = Number(amount);
+    if (isNaN(amount) || amount <= 0) {
+      setBetError('Enter a valid amount');
+      setBetMessage('');
+      return;
     }
+    if (amount > gameState.playerBalance) {
+      setBetError('Insufficient balance');
+      setBetMessage('');
+      return;
+    }
+    setBetError('');
+    setBetMessage(`Bet placed: $${amount}`);
+    websocket.sendAction(`BET:${amount}`);
+    setBetAmount('');
+    setTimeout(() => setBetMessage(''), 2000);
   };
 
   const handleHit = () => {
-    fetch(`/api/tables/${table.id}/hit?pseudo=${user.username}`, {
-      method: 'POST'
-    });
+    websocket.sendAction('HIT');
   };
 
   const handleStand = () => {
-    fetch(`/api/tables/${table.id}/stand?pseudo=${user.username}`, {
-      method: 'POST'
-    });
+    websocket.sendAction('STAND');
   };
 
-  // Simule la réception de données (à remplacer par WebSocket)
-  useEffect(() => {
-    // Pour la démo: charger des données simulées
-    const mockState = {
-      phase: 'playing',
-      dealerCards: ['as_pique', '2_coeur'],
-      dealerScore: 13,
-      playerCards: ['king_diamant', '8_trefle'],
-      playerScore: 18,
-      playerBalance: 950,
-      playerBet: 50,
-      allPlayers: {
-        'Joueur2': {
-          cards: ['5_coeur', '6_diamant'],
-          score: 11,
-          bet: 100
-        }
-      },
-      roundNumber: 1,
-      message: 'Your turn - Hit or Stand?'
-    };
+  const handleStartGame = () => {
+    websocket.sendAction('START');
+  };
 
-    // Décommenter pour tester:
-    // setGameState(mockState);
-  }, []);
+  // Connexion WebSocket au montage
+  useEffect(() => {
+    // Enregistrer le callback AVANT de se connecter
+    websocket.onStateChange((newState) => {
+      console.log('Updating game state:', newState);
+      setGameState(prev => ({
+        ...prev,
+        ...newState
+      }));
+    });
+
+    websocket.connect(table.id, user.username)
+      .catch(err => console.error('Erreur connexion WebSocket:', err));
+
+    return () => websocket.disconnect();
+  }, [table.id, user.username]);
 
   // Fonction pour obtenir le chemin de l'image d'une carte
   const getCardImage = (cardName) => {
@@ -100,7 +101,7 @@ function GameBoard({ user, table, onLogout }) {
     );
   };
 
-  // ========== AFFICHAGE PHASE DE PARIS ==========
+    // ========== AFFICHAGE PHASE DE PARIS ==========
   if (gameState.phase === 'betting') {
     return (
       <div className="game-container">
@@ -118,6 +119,7 @@ function GameBoard({ user, table, onLogout }) {
             <h2>Place Your Bet</h2>
             <div className="balance-display">
               <p>Balance: <strong>${gameState.playerBalance}</strong></p>
+              <p>Current Bet: <strong>${gameState.playerBet}</strong></p>
             </div>
             <div className="betting-controls">
               <div className="bet-input-group">
@@ -130,6 +132,8 @@ function GameBoard({ user, table, onLogout }) {
                   value={betAmount}
                   onChange={(e) => setBetAmount(Number(e.target.value))}
                 />
+                {betError && <p style={{ color: 'red', fontSize: '12px' }}>{betError}</p>}
+                {betMessage && <p style={{ color: 'green', fontSize: '12px' }}>{betMessage}</p>}
               </div>
               <div className="quick-bets">
                 <button className="quick-bet" onClick={() => handlePlaceBet(10)}>$10</button>
@@ -137,8 +141,27 @@ function GameBoard({ user, table, onLogout }) {
                 <button className="quick-bet" onClick={() => handlePlaceBet(100)}>$100</button>
               </div>
               <button className="place-bet-btn" onClick={() => handlePlaceBet(betAmount)}>Place Bet</button>
+              <button className="place-bet-btn" onClick={handleStartGame} style={{ marginTop: '10px', background: 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)' }}>Start Game</button>
             </div>
-            <p className="waiting-text">⏳ Waiting for other players...</p>
+            
+            {/* SÉPARATEUR */}
+            <div className="table-separator"></div>
+
+            {/* ZONE AUTRES JOUEURS */}
+            <div className="other-players-zone">
+              <h3>Other Players at Table</h3>
+              {Object.keys(gameState.allPlayers).length > 0 ? (
+                Object.entries(gameState.allPlayers).map(([pseudo, player]) => (
+                  <div key={pseudo} className="other-player-card">
+                    <h4>{pseudo}</h4>
+                    <p>Bet: <strong>${player.bet}</strong></p>
+                  </div>
+                ))
+              ) : (
+                <p className="waiting-text">⏳ Waiting for other players...</p>
+              )}
+            </div>
+
           </div>
         </main>
       </div>

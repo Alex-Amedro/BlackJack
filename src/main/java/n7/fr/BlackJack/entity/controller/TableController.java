@@ -1,3 +1,12 @@
+package n7.fr.BlackJack.entity.controller;
+
+import n7.fr.BlackJack.game.TableDeBlackjack;
+import n7.fr.BlackJack.service.TableManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.*;
+
 @RestController
 @RequestMapping("/api/tables")
 @CrossOrigin(origins = "*")
@@ -38,9 +47,11 @@ public class TableController {
     public void joinTable(@PathVariable String tableId, @RequestParam String pseudo)
     {
         TableDeBlackjack table = tableManager.getTable(tableId);
-        table.ajouterJoueur(pseudo);
-        if (table.getJoueurs().size() == 2) {
-            table.demarrerManche();
+        if (table != null) {
+            table.ajouterJoueur(pseudo);
+            if (table.getJoueurs().size() == 2) {
+                table.demarrerManche();
+            }
         }
     }
 
@@ -49,7 +60,9 @@ public class TableController {
     public void placeBet(@PathVariable String tableId, @RequestParam String pseudo, @RequestParam int amount)
     {
         TableDeBlackjack table = tableManager.getTable(tableId);
-        table.placerMise(pseudo, amount);
+        if (table != null) {
+            table.placerMise(pseudo, amount);
+        }
     }
 
     // tirer une carte
@@ -57,23 +70,8 @@ public class TableController {
     public void playerHit(@PathVariable String tableId, @RequestParam String pseudo)
     {
         TableDeBlackjack table = tableManager.getTable(tableId);
-
-        table.joueurTire(pseudo);
-
-        if (table.tousLesJoueursTermines()) {
-            table.terminerManche();
-
-            Map<String, String> resultats = table.determinerResultats();
-
-            Map<String, Object> gameState = new HashMap<>();
-            gameState.put("phase", "results");
-            gameState.put("resultats", resultats);
-            gameState.put("dealerScore", table.getMainCroupier().calculerScore());
-
-            messagingTemplate.convertAndSend(
-                "/topic/table/" + tableId,
-                gameState
-            );
+        if (table != null) {
+            table.joueurTire(pseudo);
         }
     }
 
@@ -82,22 +80,8 @@ public class TableController {
     public void playerStand(@PathVariable String tableId, @RequestParam String pseudo)
     {
         TableDeBlackjack table = tableManager.getTable(tableId);
-        table.joueurStand(pseudo);
-
-        if (table.tousLesJoueursTermines()) {
-            table.terminerManche();
-
-            Map<String, String> resultats = table.determinerResultats();
-
-            Map<String, Object> gameState = new HashMap<>();
-            gameState.put("phase", "results");
-            gameState.put("resultats", resultats);
-            gameState.put("dealerScore", table.getMainCroupier().calculerScore());
-
-            messagingTemplate.convertAndSend(
-                "/topic/table/" + tableId,
-                gameState
-            );
+        if (table != null) {
+            table.joueurStand(pseudo);
         }
     }
 }
