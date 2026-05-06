@@ -1,5 +1,13 @@
 HELP.md
 target/
+.db/
+db/
+*.lck
+*.log
+*.script
+*.properties
+*.mv.db
+.hsqldb/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
