@@ -3,7 +3,13 @@ package n7.fr.BlackJack.entity;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
 import n7.fr.BlackJack.game.Main;
 
 @Entity 
@@ -64,9 +70,6 @@ public class Joueur {
 
     public String getPseudo() { return this.pseudo; }
     public void setPseudo(String pseudo) { this.pseudo = pseudo; }
-
-    public String getMdp() { return this.mdp; }
-    public void setMdp(String mdp) { this.mdp = mdp; }
 
     public Collection<Invitation> getInvitations() {return this.invitations;}
     public void addInvitation(Invitation invit) {this.invitations.add(invit);}

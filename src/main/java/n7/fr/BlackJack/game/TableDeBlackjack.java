@@ -16,8 +16,7 @@ public class TableDeBlackjack {
     private Map<String, Boolean> joueursTerminesMise;
     private Map<String, Boolean> joueursTermines;
     private boolean mancheTerminee;
-    private Map<String, Boolean> joueursTerminesMise;
-
+    
     public TableDeBlackjack(String idTable) {
         this.idTable = idTable;
         this.paquet = new Paquet();

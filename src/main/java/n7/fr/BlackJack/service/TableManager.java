@@ -1,22 +1,15 @@
 package n7.fr.BlackJack.service;
 
-<<<<<<< Updated upstream
-import java.util.*;
-
-import org.springframework.stereotype.Service;
-
-import n7.fr.BlackJack.game.*;
-
-@Service
-=======
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.stereotype.Service;
+
 import n7.fr.BlackJack.game.TableDeBlackjack;
 
->>>>>>> Stashed changes
+@Service
 public class TableManager {
     private static Map<String, TableDeBlackjack> tables = new HashMap<>();
     private static int tableCounter = 1;
