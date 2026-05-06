@@ -13,6 +13,7 @@ public class TableDeBlackjack {
     private Map<String, Main> joueursMains;
     private Map<String, Integer> mises;
     private Map<String, Integer> soldes;
+    private Map<String, Boolean> joueursTerminesMise;
     private Map<String, Boolean> joueursTermines;
     private boolean mancheTerminee;
 
@@ -40,6 +41,7 @@ public class TableDeBlackjack {
         if (soldes.containsKey(pseudo) && soldes.get(pseudo) >= montant && montant > 0) {
             mises.put(pseudo, montant);
             soldes.put(pseudo, soldes.get(pseudo) - montant);
+            joueursTerminesMise.put(pseudo, true);
         }
     }
 
@@ -146,12 +148,14 @@ public class TableDeBlackjack {
         mainCroupier = new Main();
         joueursMains.clear();
         mises.clear();
+        joueursTerminesMise.clear();
         joueursTermines.clear();
         mancheTerminee = false;
 
         for (String pseudo : soldes.keySet()) {
             joueursMains.put(pseudo, new Main());
             mises.put(pseudo, 0);
+            joueursTerminesMise.put(pseudo, false);
             joueursTermines.put(pseudo, false);
         }
     }

@@ -27,6 +27,25 @@ public class Carte {
     public Valeur getValeur() { return valeur; }
     public int getPoints() { return valeur.getPoints(); }
 
+    public String getAssetName() {
+        String valueName = switch (valeur) {
+            case VALET -> "jack";
+            case DAME -> "queen";
+            case ROI -> "king";
+            case AS -> "as";
+            default -> String.valueOf(valeur.getPoints());
+        };
+
+        String suitName = switch (couleur) {
+            case COEUR -> "coeur";
+            case CARREAU -> "diamant";
+            case TREFLE -> "trefle";
+            case PIQUE -> "pique";
+        };
+
+        return valueName + "_" + suitName;
+    }
+
     @Override
     public String toString() {
         return valeur + " de " + couleur;

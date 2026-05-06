@@ -1,37 +1,45 @@
 import { useState, useEffect } from 'react';
 import './WaitingForTablePage.css';
+import { createTable, joinTable, listTables } from '../services/api';
 
 function WaitingForTablePage({ user, onTable, onLogout }) {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState(null);
 
+  const loadTables = async () => {
+    setLoading(true);
+    try {
+      const data = await listTables();
+      setTables(data);
+    } catch (err) {
+      console.error('Erreur chargement tables:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Fetch vraies tables depuis le backend
-    fetch('http://localhost:8080/api/tables')
-      .then(res => res.json())
-      .then(data => {
-        setTables(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Erreur chargement tables:', err);
-        setLoading(false);
-      });
+    loadTables();
   }, []);
 
-  const handleJoinTable = (table) => {
+  const handleCreateTable = async () => {
+    try {
+      const table = await createTable();
+      setTables((current) => [table, ...current]);
+    } catch (err) {
+      console.error('Erreur creation table:', err);
+    }
+  };
+
+  const handleJoinTable = async (table) => {
     setSelectedTable(table.id);
-    // Appeler l'API pour rejoindre la table
-    fetch(`http://localhost:8080/api/tables/${table.id}/join?pseudo=${user.username}`, {
-      method: 'POST'
-    })
-      .then(() => {
-        setTimeout(() => {
-          onTable({ ...table, tableId: table.id });
-        }, 500);
-      })
-      .catch(err => console.error('Erreur join table:', err));
+    try {
+      const joinedTable = await joinTable(table.id, user.username);
+      onTable(joinedTable);
+    } catch (err) {
+      console.error('Erreur join table:', err);
+    }
   };
 
   return (
@@ -49,6 +57,9 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
       <main className="waiting-main">
         <div className="waiting-content">
           <h2>Find a Table</h2>
+          <button onClick={handleCreateTable} className="join-btn" style={{ marginBottom: '1rem' }}>
+            Create Table
+          </button>
 
           {loading ? (
             <div className="loading-state">
@@ -68,7 +79,7 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
                     <div className="table-info">
                       <h3>{table.name}</h3>
                       <p className="players-count">
-                        {table.players} / {table.maxPlayers} players
+                        {table.playerCount} / {table.maxPlayers} players
                       </p>
                       <div className="player-slots">
                         {Array.from({ length: table.maxPlayers }).map(
@@ -76,7 +87,7 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
                             <div
                               key={i}
                               className={`slot ${
-                                i < table.players ? 'filled' : 'empty'
+                                i < table.playerCount ? 'filled' : 'empty'
                               }`}
                             />
                           )

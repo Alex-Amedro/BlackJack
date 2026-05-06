@@ -28,11 +28,13 @@ public class Joueur {
     @OneToMany
     private Collection<Message> messages;
 
+    @Transient // game.Main is an in-memory model, not a JPA-mapped type
     private Main main;
     
 
     public Joueur() {
         this.solde = 1000;
+        this.mdp = "";
         this.invitations = new ArrayList<>();
         this.messages = new ArrayList<>();
         this.matchs = new ArrayList<>();
@@ -42,6 +44,7 @@ public class Joueur {
     public Joueur(String pseudo) {
         this.pseudo = pseudo;
         this.solde = 1000;
+        this.mdp = "";
         this.invitations = new ArrayList<>();
         this.messages = new ArrayList<>();
         this.matchs = new ArrayList<>();
@@ -53,12 +56,17 @@ public class Joueur {
     public int getSolde() { return this.solde; }
     public void setSolde(int solde) { this.solde = solde; }
 
+    @Transient
     public Main getMain() { return this.main; }
+    @Transient
     public void setMain(Main main) { this.main = main; }
     public void clearMain() { this.main = null; }
 
     public String getPseudo() { return this.pseudo; }
     public void setPseudo(String pseudo) { this.pseudo = pseudo; }
+
+    public String getMdp() { return this.mdp; }
+    public void setMdp(String mdp) { this.mdp = mdp; }
 
     public Collection<Invitation> getInvitations() {return this.invitations;}
     public void addInvitation(Invitation invit) {this.invitations.add(invit);}

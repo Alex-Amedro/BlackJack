@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -25,24 +25,41 @@ export function health() {
   return request('/health');
 }
 
-export function createPlayer(pseudo) {
-  const params = new URLSearchParams({ pseudo });
-  return request(`/joueurs?${params.toString()}`, { method: 'POST' });
+export function registerPlayer(pseudo, mdp = '') {
+  return request('/joueurs/inscription', {
+    method: 'POST',
+    body: JSON.stringify({ pseudo, mdp }),
+  });
 }
 
 export function createTable() {
   return request('/tables', { method: 'POST' });
 }
 
-export function joinTable(tableId, joueurId) {
-  const params = new URLSearchParams({ joueurId: String(joueurId) });
-  return request(`/tables/${tableId}/join?${params.toString()}`, { method: 'POST' });
-}
-
 export function listTables() {
   return request('/tables');
 }
 
-export function listPlayers() {
-  return request('/joueurs');
+export function getTable(tableId) {
+  return request(`/tables/${tableId}`);
+}
+
+export function joinTable(tableId, pseudo) {
+  const params = new URLSearchParams({ pseudo });
+  return request(`/tables/${tableId}/join?${params.toString()}`, { method: 'POST' });
+}
+
+export function placeBet(tableId, pseudo, amount) {
+  const params = new URLSearchParams({ pseudo, amount: String(amount) });
+  return request(`/tables/${tableId}/bet?${params.toString()}`, { method: 'POST' });
+}
+
+export function hit(tableId, pseudo) {
+  const params = new URLSearchParams({ pseudo });
+  return request(`/tables/${tableId}/hit?${params.toString()}`, { method: 'POST' });
+}
+
+export function stand(tableId, pseudo) {
+  const params = new URLSearchParams({ pseudo });
+  return request(`/tables/${tableId}/stand?${params.toString()}`, { method: 'POST' });
 }

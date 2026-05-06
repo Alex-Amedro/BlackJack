@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import './LoginPage.css';
+import { registerPlayer } from '../services/api';
 
 function LoginPage({ onLogin }) {
   const [playerName, setPlayerName] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -14,12 +16,19 @@ function LoginPage({ onLogin }) {
       return;
     }
 
-    console.log('Game started with player:', playerName);
-
-    // Call the onLogin callback
-    onLogin({
-      username: playerName.trim(),
-    });
+    setSubmitting(true);
+    try {
+      const player = await registerPlayer(playerName.trim());
+      onLogin({
+        id: player.id,
+        username: player.pseudo ?? playerName.trim(),
+        pseudo: player.pseudo ?? playerName.trim(),
+      });
+    } catch (err) {
+      setError(err.message || 'Unable to create player');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -45,8 +54,8 @@ function LoginPage({ onLogin }) {
 
           {error && <div className="error-message">{error}</div>}
 
-          <button type="submit" className="login-button">
-            Start Game
+          <button type="submit" className="login-button" disabled={submitting}>
+            {submitting ? 'Starting...' : 'Start Game'}
           </button>
         </form>
       </div>

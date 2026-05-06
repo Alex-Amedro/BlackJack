@@ -1,3 +1,12 @@
+package n7.fr.BlackJack.service;
+
+import java.util.*;
+
+import org.springframework.stereotype.Service;
+
+import n7.fr.BlackJack.game.*;
+
+@Service
 public class TableManager {
     private static Map<String, TableDeBlackjack> tables = new HashMap<>();
     private static int tableCounter = 1;

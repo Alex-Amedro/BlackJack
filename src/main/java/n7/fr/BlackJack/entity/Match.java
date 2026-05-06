@@ -13,6 +13,7 @@ public class Match {
     @OneToMany
     private Collection<Joueur> joueurs;
 
+    @Transient
     private Map<Joueur, Integer> scores;
 
 

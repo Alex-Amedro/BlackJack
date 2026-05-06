@@ -1,4 +1,4 @@
-package n7.fr.BlackJack.controller;
+package n7.fr.BlackJack.entity.controller;
 
 import n7.fr.BlackJack.entity.Joueur;
 import n7.fr.BlackJack.repository.JoueurRepository;
