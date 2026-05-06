@@ -21,12 +21,24 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
 
   useEffect(() => {
     loadTables();
+
+    //Permet de fetch régulièrement la liste des tables
+    const intervalId = setInterval(() => {
+      listTables()
+      .then((data) => setTables(data))
+      .catch((err) => console.error('Polling error:', err));
+    }, 3000);
+
+    //on clear le timer quand le joueur join ou quitte
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleCreateTable = async () => {
     try {
       const table = await createTable();
       setTables((current) => [table, ...current]);
+      // Ce qui nous manquait qui faisait qu'on joinait pas direct
+      handleJoinTable(table)
     } catch (err) {
       console.error('Erreur creation table:', err);
     }
