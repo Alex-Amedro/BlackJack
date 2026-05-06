@@ -76,4 +76,12 @@ public class Joueur {
     
     public Collection<Match> getMatchs() {return this.matchs;}
     public void addMatch(Match game) {this.matchs.add(game);}
+
+    public String getMdp() {
+        return mdp;
+    }
+
+    public void setMdp(String mdp) {
+        this.mdp = mdp;
+    }
 }
