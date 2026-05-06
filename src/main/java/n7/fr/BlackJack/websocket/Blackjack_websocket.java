@@ -1,14 +1,18 @@
 package n7.fr.BlackJack.websocket;
 
-import jakarta.websocket.*;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.google.gson.Gson;
+
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnMessage;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
 import n7.fr.BlackJack.game.TableDeBlackjack;
-import n7.fr.BlackJack.game.Main;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.io.IOException;
-import com.google.gson.Gson;
 
 @ServerEndpoint("/ws/blackjack/{idTable}/{pseudo}")
 public class Blackjack_websocket {
@@ -63,7 +67,7 @@ public class Blackjack_websocket {
 
     @OnClose
     public void onClose(Session session, @PathParam("idTable") String idTable) {
-        String pseudo = sessionsJoueurs.remove(session);
+        sessionsJoueurs.remove(session);
         tableSessions.get(idTable).remove(session);
     }
 
@@ -85,7 +89,7 @@ public class Blackjack_websocket {
             try {
                 s.getBasicRemote().sendText(json);
             } catch (IOException e) {
-                e.printStackTrace();
+                System.err.println("Error sending websocket message: " + e.getMessage());
             }
         }
     }

@@ -5,16 +5,16 @@ import java.util.Map;
 import java.util.Set;
 
 public class TableDeBlackjack {
-    private String idTable;
+    private final String idTable;
     private Paquet paquet;
     private Main mainCroupier;
     private int numeroManche;
 
-    private Map<String, Main> joueursMains;
-    private Map<String, Integer> mises;
-    private Map<String, Integer> soldes;
-    private Map<String, Boolean> joueursTerminesMise;
-    private Map<String, Boolean> joueursTermines;
+    private final Map<String, Main> joueursMains;
+    private final Map<String, Integer> mises;
+    private final Map<String, Integer> soldes;
+    private final Map<String, Boolean> joueursTerminesMise;
+    private final Map<String, Boolean> joueursTermines;
     private boolean mancheTerminee;
     
     public TableDeBlackjack(String idTable) {
