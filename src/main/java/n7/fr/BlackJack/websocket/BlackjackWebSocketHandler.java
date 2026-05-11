@@ -74,7 +74,7 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
                 table.terminerManche();
             }
         } else if ("START".equals(payload)) {
-            table.demarrerManche();
+            table.lancerTourDeMise();
         } else if (payload.startsWith("BET:")) {
             try {
                 int amount = Integer.parseInt(payload.substring(4));
@@ -178,12 +178,11 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
         info.put("playerCount", table.getJoueurs().size());
         info.put("maxPlayers", 7);
         info.put("roundNumber", table.getNumeroManche());
-        info.put("phase", table.estMancheTerminee() ? "results"
-                : (table.getNumeroManche() > 0 ? "playing" : "waiting"));
+        info.put("phase", table.getPhase());
         info.put("dealerCards", mapCards(table.getMainCroupier()));
         info.put("dealerScore", table.getMainCroupier().calculerScore());
         info.put("players", buildPlayers(table));
-        if (table.estMancheTerminee()) {
+        if ("results".equals(table.getPhase())) {
             info.put("resultats", table.determinerResultats());
         }
         return info;
@@ -205,6 +204,7 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
             p.put("bet", table.getMise(pseudo));
             p.put("balance", table.getSolde(pseudo));
             p.put("finished", table.joueurAFiniDeJouer(pseudo));
+            p.put("hasBet", table.joueurAMise(pseudo));
             players.put(pseudo, p);
         }
         return players;

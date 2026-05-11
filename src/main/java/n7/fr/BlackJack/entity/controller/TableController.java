@@ -48,9 +48,6 @@ public class TableController {
         }
 
         table.ajouterJoueur(pseudo);
-        if (table.getJoueurs().size() == 2) {
-            table.demarrerManche();
-        }
 
         // Notifier tous les clients WS connectés
         wsHandler.broadcastState(tableId);
@@ -73,12 +70,12 @@ public class TableController {
         info.put("playerCount", table.getJoueurs().size());
         info.put("maxPlayers", 7);
         info.put("roundNumber", table.getNumeroManche());
-        info.put("phase", table.estMancheTerminee() ? "results" : (table.getNumeroManche() > 0 ? "playing" : "waiting"));
+        info.put("phase", table.getPhase());
         info.put("dealerCards", mapCards(table.getMainCroupier()));
         info.put("dealerScore", table.getMainCroupier().calculerScore());
         info.put("players", buildPlayers(table));
 
-        if (table.estMancheTerminee()) {
+        if ("results".equals(table.getPhase())) {
             info.put("resultats", table.determinerResultats());
         }
 
