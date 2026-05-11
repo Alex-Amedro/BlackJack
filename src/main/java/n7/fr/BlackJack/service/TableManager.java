@@ -23,6 +23,11 @@ public class TableManager {
     public TableDeBlackjack getTable(String tableId) {
         return tables.get(tableId);
     }
+
+    // Supprimer une table (quand elle est vide)
+    public void removeTable(String tableId) {
+        tables.remove(tableId);
+    }
     
     // Lister toutes les tables
     public List<TableDeBlackjack> getAllTables() {

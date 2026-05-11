@@ -88,10 +88,33 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         String tableId = sessionTableId.remove(session.getId());
-        sessionPseudo.remove(session.getId());
+        String pseudo = sessionPseudo.remove(session.getId());
         if (tableId != null) {
             Set<WebSocketSession> sessions = tableSessions.get(tableId);
             if (sessions != null) sessions.remove(session);
+
+            // Retirer le joueur de la table
+            if (pseudo != null) {
+                TableDeBlackjack table = tableManager.getTable(tableId);
+                if (table != null) {
+                    table.retirerJoueur(pseudo);
+                    System.out.println("Joueur " + pseudo + " retiré de " + tableId);
+
+                    if (table.estVide()) {
+                        // Supprimer la table vide
+                        tableManager.removeTable(tableId);
+                        tableSessions.remove(tableId);
+                        System.out.println("Table " + tableId + " supprimée (vide)");
+                    } else {
+                        // Si tous les joueurs restants ont fini, terminer la manche
+                        if (!table.estMancheTerminee() && table.getNumeroManche() > 0
+                                && table.tousLesJoueursTermines()) {
+                            table.terminerManche();
+                        }
+                        broadcastState(tableId);
+                    }
+                }
+            }
         }
     }
 

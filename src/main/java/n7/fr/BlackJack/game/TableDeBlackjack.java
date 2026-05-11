@@ -36,6 +36,25 @@ public class TableDeBlackjack {
         mises.put(pseudo, 0);
         soldes.put(pseudo, 1000);
         joueursTermines.put(pseudo, false);
+
+        // Si une manche est en cours, distribuer des cartes au nouveau joueur
+        if (numeroManche > 0 && !mancheTerminee) {
+            Main main = joueursMains.get(pseudo);
+            main.ajouterCarte(paquet.tirerCarte());
+            main.ajouterCarte(paquet.tirerCarte());
+        }
+    }
+
+    public void retirerJoueur(String pseudo) {
+        joueursMains.remove(pseudo);
+        mises.remove(pseudo);
+        soldes.remove(pseudo);
+        joueursTermines.remove(pseudo);
+        joueursTerminesMise.remove(pseudo);
+    }
+
+    public boolean estVide() {
+        return joueursMains.isEmpty();
     }
 
     public void placerMise(String pseudo, int montant) {
