@@ -81,7 +81,7 @@ function GameBoard({ user, table, onLogout }) {
         <div className="gb-header-info">
           <span className="gb-badge">{gameState.name}</span>
           <span className="gb-badge">Manche {gameState.roundNumber || '-'}</span>
-          <span className="gb-badge gb-balance">💰 ${me.balance ?? 0}</span>
+          <span className="gb-badge gb-balance">${me.balance ?? 0}</span>
         </div>
         <button onClick={onLogout} className="gb-logout">Quitter</button>
       </header>
@@ -92,21 +92,21 @@ function GameBoard({ user, table, onLogout }) {
       <div className="gb-table">
         <div className="gb-felt">
 
-          {/* ─── PHASE: WAITING ─── */}
+          {/* PHASE: WAITING */}
           {phase === 'waiting' && (
             <div className="gb-center-msg">
-              <div className="gb-waiting-icon">⏳</div>
+
               <h2>En attente de joueurs...</h2>
               <p>La partie commence dès qu'un 2ème joueur rejoint.</p>
               <p className="gb-player-count">{Object.keys(allPlayers).length} / 7 joueurs</p>
             </div>
           )}
 
-          {/* ─── PHASE: BETTING ─── */}
+          {/* PHASE: BETTING */}
           {phase === 'betting' && (
             <div className="gb-betting">
               <div className="gb-betting-header">
-                <h2>🎰 Tour de mise — Manche {gameState.roundNumber}</h2>
+                <h2>Tour de mise - Manche {gameState.roundNumber}</h2>
               </div>
 
               <div className="gb-other-bets">
@@ -114,7 +114,7 @@ function GameBoard({ user, table, onLogout }) {
                   <div key={pseudo} className={`gb-other-bet ${p.hasBet ? 'has-bet' : ''}`}>
                     <span className="gb-other-name">{pseudo}</span>
                     <span className="gb-other-status">
-                      {p.hasBet ? `✅ Misé $${p.bet}` : '⏳ En attente...'}
+                      {p.hasBet ? `Misé $${p.bet}` : 'En attente...'}
                     </span>
                   </div>
                 ))}
@@ -139,14 +139,14 @@ function GameBoard({ user, table, onLogout }) {
                 </div>
               ) : (
                 <div className="gb-bet-waiting">
-                  <p>✅ Votre mise : <strong>${me.bet}</strong></p>
+                  <p>Votre mise : <strong>${me.bet}</strong></p>
                   <p className="gb-dim">En attente des autres joueurs...</p>
                 </div>
               )}
             </div>
           )}
 
-          {/* ─── PHASE: PLAYING ─── */}
+          {/* PHASE: PLAYING */}
           {phase === 'playing' && (
             <>
               {/* Dealer */}
@@ -167,7 +167,7 @@ function GameBoard({ user, table, onLogout }) {
                 <div className="gb-others">
                   {others.map(([pseudo, p]) => (
                     <div key={pseudo} className={`gb-player-card ${p.finished ? 'finished' : ''}`}>
-                      <h4>{pseudo} {p.finished ? '✋' : '🃏'}</h4>
+                      <h4>{pseudo}</h4>
                       <div className="gb-cards">
                         {(p.cards || []).map((c, i) => <Card key={`${pseudo}-${i}`} name={c} />)}
                       </div>
@@ -193,26 +193,26 @@ function GameBoard({ user, table, onLogout }) {
                 </div>
                 {!me.finished ? (
                   <div className="gb-actions">
-                    <button className="gb-action gb-hit" onClick={handleHit}>🃏 TIRER</button>
-                    <button className="gb-action gb-stand" onClick={handleStand}>✋ RESTER</button>
+                    <button className="gb-action gb-hit" onClick={handleHit}>TIRER</button>
+                    <button className="gb-action gb-stand" onClick={handleStand}>RESTER</button>
                   </div>
                 ) : (
                   <p className="gb-finished-msg">
-                    {me.score > 21 ? '💥 Bust !' : '✋ Vous avez terminé.'}
+                    {me.score > 21 ? 'Bust !' : 'Vous avez terminé.'}
                   </p>
                 )}
               </div>
             </>
           )}
 
-          {/* ─── PHASE: RESULTS ─── */}
+          {/* PHASE: RESULTS */}
           {phase === 'results' && (
             <div className="gb-results">
-              <h2>📊 Résultats — Manche {gameState.roundNumber}</h2>
+              <h2>Résultats - Manche {gameState.roundNumber}</h2>
 
               {/* Dealer final */}
               <div className="gb-dealer-result">
-                <h3>Croupier — Score: {gameState.dealerScore}</h3>
+                <h3>Croupier - Score: {gameState.dealerScore}</h3>
                 <div className="gb-cards">
                   {(gameState.dealerCards || []).map((c, i) => <Card key={`dr-${i}`} name={c} />)}
                 </div>
@@ -225,7 +225,7 @@ function GameBoard({ user, table, onLogout }) {
                   const isMe = pseudo === user.username;
                   return (
                     <div key={pseudo} className={`gb-result-card ${res.toLowerCase()} ${isMe ? 'is-me' : ''}`}>
-                      <h4>{isMe ? '👤 Vous' : pseudo}</h4>
+                      <h4>{isMe ? 'Vous' : pseudo}</h4>
                       <div className="gb-cards gb-small-cards">
                         {(p.cards || []).map((c, i) => <Card key={`r-${pseudo}-${i}`} name={c} />)}
                       </div>
@@ -233,7 +233,7 @@ function GameBoard({ user, table, onLogout }) {
                         <span>Score: {p.score}</span>
                         <span>Mise: ${p.bet}</span>
                         <span className={`gb-result-badge ${res.toLowerCase()}`}>
-                          {res === 'WIN' ? '🏆 Gagné' : res === 'LOSE' ? '❌ Perdu' : '🤝 Égalité'}
+                          {res === 'WIN' ? 'Gagné' : res === 'LOSE' ? 'Perdu' : 'Égalité'}
                         </span>
                       </div>
                     </div>
@@ -242,7 +242,7 @@ function GameBoard({ user, table, onLogout }) {
               </div>
 
               <button className="gb-new-round" onClick={handleNewRound}>
-                🔄 Nouvelle manche
+                Nouvelle manche
               </button>
             </div>
           )}
