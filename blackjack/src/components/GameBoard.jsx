@@ -1,89 +1,78 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import './GameBoard.css';
-import { getTable, hit, placeBet, stand } from '../services/api';
 
 function GameBoard({ user, table, onLogout }) {
   const [gameState, setGameState] = useState(null);
   const [betAmount, setBetAmount] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const wsRef = useRef(null);
 
   const tableId = table?.id;
 
+  // Envoyer une action via WebSocket
+  const sendAction = useCallback((action) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(action);
+    }
+  }, []);
+
+  // Connexion WebSocket au montage du composant
   useEffect(() => {
-    let active = true;
-
-    const loadTable = async () => {
-      if (!tableId) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError('');
-      try {
-        const snapshot = await getTable(tableId);
-        if (active) {
-          setGameState(snapshot);
-        }
-      } catch (err) {
-        if (active) {
-          setError(err.message || 'Unable to load table state');
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadTable();
-
-    return () => {
-      active = false;
-    };
-  }, [tableId]);
-
-  const playerState = useMemo(() => {
-    return gameState?.players?.[user.username] || null;
-  }, [gameState, user.username]);
-
-  const refreshState = async (nextState) => {
-    setGameState(nextState);
-  };
-
-  const handlePlaceBet = async (amount) => {
-    const parsedAmount = Number(amount);
-    if (!parsedAmount || parsedAmount <= 0) {
+    if (!tableId) {
+      setLoading(false);
       return;
     }
 
-    try {
-      const nextState = await placeBet(tableId, user.username, parsedAmount);
-      await refreshState(nextState);
-      setBetAmount('');
-    } catch (err) {
-      setError(err.message || 'Unable to place bet');
-    }
+    const ws = new WebSocket(`ws://localhost:8080/ws/blackjack/${tableId}/${user.username}`);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket connecté à la table', tableId);
+      setLoading(false);
+      // Demander l'état initial au serveur
+      ws.send('REFRESH');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const newState = JSON.parse(event.data);
+        setGameState(newState);
+        setLoading(false);
+      } catch (e) {
+        console.error('Erreur parsing WS message:', e);
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error('WebSocket erreur:', err);
+      setError('Erreur de connexion WebSocket');
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket fermé');
+    };
+
+    // Nettoyage : fermer le WS quand on quitte la page
+    return () => {
+      ws.close();
+    };
+  }, [tableId, user.username]);
+
+  // --- Actions de jeu (tout passe par WebSocket) ---
+
+  const handlePlaceBet = (amount) => {
+    const parsedAmount = Number(amount);
+    if (!parsedAmount || parsedAmount <= 0) return;
+    sendAction(`BET:${parsedAmount}`);
+    setBetAmount('');
   };
 
-  const handleHit = async () => {
-    try {
-      const nextState = await hit(tableId, user.username);
-      await refreshState(nextState);
-    } catch (err) {
-      setError(err.message || 'Unable to hit');
-    }
-  };
+  const handleHit = () => sendAction('HIT');
+  const handleStand = () => sendAction('STAND');
 
-  const handleStand = async () => {
-    try {
-      const nextState = await stand(tableId, user.username);
-      await refreshState(nextState);
-    } catch (err) {
-      setError(err.message || 'Unable to stand');
-    }
-  };
+  // --- Utilitaires d'affichage ---
 
   const getCardImage = (cardName) => new URL(`../assets/card_deck/${cardName}.png`, import.meta.url).href;
 
@@ -91,9 +80,10 @@ function GameBoard({ user, table, onLogout }) {
     if (hidden) {
       return <img src={new URL('../assets/card_deck/pioche_bleue.png', import.meta.url).href} alt="Hidden card" className="card-image" />;
     }
-
     return <img src={getCardImage(cardName)} alt={cardName} className="card-image" />;
   };
+
+  // --- Rendu ---
 
   if (loading || !gameState) {
     return (
@@ -117,7 +107,9 @@ function GameBoard({ user, table, onLogout }) {
   }
 
   const currentPhase = gameState.phase || (gameState.resultats ? 'results' : 'playing');
-  const otherPlayers = Object.entries(gameState.players || {}).filter(([pseudo]) => pseudo !== user.username);
+  const allPlayers = gameState.players || {};
+  const playerState = allPlayers[user.username] || null;
+  const otherPlayers = Object.entries(allPlayers).filter(([pseudo]) => pseudo !== user.username);
 
   return (
     <div className="game-container">

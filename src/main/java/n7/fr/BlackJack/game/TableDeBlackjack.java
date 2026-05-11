@@ -31,6 +31,7 @@ public class TableDeBlackjack {
     }
 
     public void ajouterJoueur(String pseudo) {
+        if (joueursMains.containsKey(pseudo)) return; // déjà à la table
         joueursMains.put(pseudo, new Main());
         mises.put(pseudo, 0);
         soldes.put(pseudo, 1000);

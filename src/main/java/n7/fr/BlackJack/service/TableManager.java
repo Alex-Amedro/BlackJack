@@ -8,8 +8,8 @@ import n7.fr.BlackJack.game.*;
 
 @Service
 public class TableManager {
-    private static Map<String, TableDeBlackjack> tables = new HashMap<>();
-    private static int tableCounter = 1;
+    private final Map<String, TableDeBlackjack> tables = new HashMap<>();
+    private int tableCounter = 1;
 
     // Créer une nouvelle table
     public TableDeBlackjack createTable() {

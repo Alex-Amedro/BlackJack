@@ -21,6 +21,13 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
 
   useEffect(() => {
     loadTables();
+
+    // Rafraîchissement automatique toutes les 3 secondes
+    const interval = setInterval(() => {
+      loadTables();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleCreateTable = async () => {

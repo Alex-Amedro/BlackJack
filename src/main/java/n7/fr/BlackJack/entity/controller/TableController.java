@@ -12,6 +12,7 @@ import n7.fr.BlackJack.game.Carte;
 import n7.fr.BlackJack.game.Main;
 import n7.fr.BlackJack.game.TableDeBlackjack;
 import n7.fr.BlackJack.service.TableManager;
+import n7.fr.BlackJack.websocket.BlackjackWebSocketHandler;
 
 @RestController
 @RequestMapping("/api/tables")
@@ -20,6 +21,9 @@ public class TableController {
 
     @Autowired
     private TableManager tableManager;
+
+    @Autowired
+    private BlackjackWebSocketHandler wsHandler;
 
     @GetMapping
     public List<Map<String, Object>> listTables() {
@@ -48,49 +52,8 @@ public class TableController {
             table.demarrerManche();
         }
 
-        return buildSnapshot(table);
-    }
-
-    @PostMapping("/{tableId}/bet")
-    public Map<String, Object> placeBet(@PathVariable String tableId, @RequestParam String pseudo, @RequestParam int amount) {
-        TableDeBlackjack table = tableManager.getTable(tableId);
-        if (table == null) {
-            throw new RuntimeException("Table non trouvée");
-        }
-
-        table.placerMise(pseudo, amount);
-        return buildSnapshot(table);
-    }
-
-    @PostMapping("/{tableId}/hit")
-    public Map<String, Object> playerHit(@PathVariable String tableId, @RequestParam String pseudo) {
-        TableDeBlackjack table = tableManager.getTable(tableId);
-        if (table == null) {
-            throw new RuntimeException("Table non trouvée");
-        }
-
-        table.joueurTire(pseudo);
-
-        if (table.tousLesJoueursTermines()) {
-            table.terminerManche();
-        }
-
-        return buildSnapshot(table);
-    }
-
-    @PostMapping("/{tableId}/stand")
-    public Map<String, Object> playerStand(@PathVariable String tableId, @RequestParam String pseudo) {
-        TableDeBlackjack table = tableManager.getTable(tableId);
-        if (table == null) {
-            throw new RuntimeException("Table non trouvée");
-        }
-
-        table.joueurStand(pseudo);
-
-        if (table.tousLesJoueursTermines()) {
-            table.terminerManche();
-        }
-
+        // Notifier tous les clients WS connectés
+        wsHandler.broadcastState(tableId);
         return buildSnapshot(table);
     }
 
@@ -100,7 +63,6 @@ public class TableController {
         if (table == null) {
             throw new RuntimeException("Table non trouvée");
         }
-
         return buildSnapshot(table);
     }
 
