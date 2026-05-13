@@ -9,28 +9,44 @@ async function request(path, options = {}) {
     ...options,
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `HTTP ${response.status}`);
-  }
-
   const contentType = response.headers.get('content-type') || '';
+  let data;
   if (contentType.includes('application/json')) {
-    return response.json();
+    data = await response.json();
+  } else {
+    data = await response.text();
   }
-  return response.text();
+
+  if (!response.ok) {
+    // Le backend renvoie { "error": "..." } en cas d'erreur
+    const errorMsg = (data && data.error) ? data.error : (typeof data === 'string' ? data : `HTTP ${response.status}`);
+    throw new Error(errorMsg);
+  }
+
+  return data;
 }
 
-export function health() {
-  return request('/health');
-}
+// ─── Joueurs ─────────────────────────────────────
 
-export function registerPlayer(pseudo, mdp = '') {
+export function registerPlayer(pseudo, mdp, confirmMdp) {
   return request('/joueurs/inscription', {
+    method: 'POST',
+    body: JSON.stringify({ pseudo, mdp, confirmMdp }),
+  });
+}
+
+export function loginPlayer(pseudo, mdp) {
+  return request('/joueurs/login', {
     method: 'POST',
     body: JSON.stringify({ pseudo, mdp }),
   });
 }
+
+export function getRanking() {
+  return request('/joueurs/ranking');
+}
+
+// ─── Tables ──────────────────────────────────────
 
 export function createTable() {
   return request('/tables', { method: 'POST' });

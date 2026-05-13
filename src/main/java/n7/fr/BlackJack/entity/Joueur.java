@@ -13,6 +13,7 @@ public class Joueur {
     @GeneratedValue(strategy = GenerationType.IDENTITY) 
     private int id;
     
+    @Column(unique = true)
     private String pseudo;
 
     private String mdp; 
