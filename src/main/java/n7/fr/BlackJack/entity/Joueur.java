@@ -23,11 +23,13 @@ public class Joueur {
     @ManyToMany
     private Collection<Match> matchs;
 
-    @OneToMany 
-    private Collection<Invitation> invitations;
-
-    @OneToMany
-    private Collection<Message> messages;
+    @ManyToMany
+    @JoinTable(
+        name = "joueur_amis",
+        joinColumns = @JoinColumn(name = "joueur_id"),
+        inverseJoinColumns = @JoinColumn(name = "ami_id")
+    )
+    private Collection<Joueur> amis;
 
     @Transient // game.Main is an in-memory model, not a JPA-mapped type
     private Main main;
@@ -36,9 +38,8 @@ public class Joueur {
     public Joueur() {
         this.solde = 1000;
         this.mdp = "";
-        this.invitations = new ArrayList<>();
-        this.messages = new ArrayList<>();
         this.matchs = new ArrayList<>();
+        this.amis = new ArrayList<>();
         this.main = new Main();
     }
 
@@ -46,9 +47,8 @@ public class Joueur {
         this.pseudo = pseudo;
         this.solde = 1000;
         this.mdp = "";
-        this.invitations = new ArrayList<>();
-        this.messages = new ArrayList<>();
         this.matchs = new ArrayList<>();
+        this.amis = new ArrayList<>();
     }
 
     public int getId() { return this.id; }
@@ -68,13 +68,11 @@ public class Joueur {
 
     public String getMdp() { return this.mdp; }
     public void setMdp(String mdp) { this.mdp = mdp; }
-
-    public Collection<Invitation> getInvitations() {return this.invitations;}
-    public void addInvitation(Invitation invit) {this.invitations.add(invit);}
-    
-    public Collection<Message> getMessages() {return this.messages;}
-    public void addMessages(Message sms) {this.messages.add(sms);}
     
     public Collection<Match> getMatchs() {return this.matchs;}
     public void addMatch(Match game) {this.matchs.add(game);}
+
+    public Collection<Joueur> getAmis() { return this.amis; }
+    public void addAmi(Joueur ami) { this.amis.add(ami); }
+    public void removeAmi(Joueur ami) { this.amis.remove(ami); }
 }

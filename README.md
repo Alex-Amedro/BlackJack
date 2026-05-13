@@ -4,8 +4,5 @@ Ce projet a pour but d'implémenter un jeu en ligne et multijoueurs de Blackjack
 
 ## Features (TODO)
 
-- Players identifcation
 - Invitations between players
-- Real-time game
 - Chat
-- History/Ranking

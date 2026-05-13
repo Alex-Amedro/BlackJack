@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import './WaitingForTablePage.css';
 import { createTable, joinTable, listTables, getRanking } from '../services/api';
+import ChatPanel from './ChatPanel';
+import FriendsPanel from './FriendsPanel';
 
 function WaitingForTablePage({ user, onTable, onLogout }) {
   const [tables, setTables] = useState([]);
@@ -172,6 +174,10 @@ function WaitingForTablePage({ user, onTable, onLogout }) {
           </div>
         </div>
       </main>
+
+      {/* Panneaux flottants : Chat + Amis */}
+      <ChatPanel user={user} />
+      <FriendsPanel user={user} />
     </div>
   );
 }

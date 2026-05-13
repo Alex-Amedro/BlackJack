@@ -19,7 +19,7 @@ public class Croupier {
     }
 
     public void distribuerCartes() {
-        table.demarrerManche();
+        table.lancerTourDeMise();
     }
 
     public int getScoreCroupier() {
