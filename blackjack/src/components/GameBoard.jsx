@@ -20,19 +20,48 @@ function GameBoard({ user, table, onLogout }) {
   useEffect(() => {
     if (!tableId) { setLoading(false); return; }
 
-    const ws = new WebSocket(`ws://localhost:8080/ws/blackjack/${tableId}/${user.username}`);
-    wsRef.current = ws;
+    let reconnectTimeout = null;
+    let isMounted = true;
 
-    ws.onopen = () => { setLoading(false); ws.send('REFRESH'); };
-    ws.onmessage = (e) => {
-      try { setGameState(JSON.parse(e.data)); setLoading(false); }
-      catch (err) { console.error('WS parse error:', err); }
+    const connectWebSocket = () => {
+      const host = window.location.hostname;
+      // We now pass user.wsToken instead of user.username!
+      const ws = new WebSocket(`ws://${host}:8080/ws/blackjack/${tableId}/${user.wsToken}`);
+      wsRef.current = ws;
+
+      ws.onopen = () => { 
+        if (isMounted) setLoading(false); 
+        ws.send('REFRESH'); 
+      };
+      
+      ws.onmessage = (e) => {
+        try { 
+          if (isMounted) setGameState(JSON.parse(e.data)); 
+          if (isMounted) setLoading(false); 
+        }
+        catch (err) { console.error('WS parse error:', err); }
+      };
+
+      ws.onerror = () => {
+        if (isMounted) setError('Erreur de connexion WebSocket');
+      };
+
+      ws.onclose = () => {
+        console.log('WS fermé. Tentative de reconnexion dans 3 secondes...');
+        if (isMounted) {
+          reconnectTimeout = setTimeout(connectWebSocket, 3000);
+        }
+      };
     };
-    ws.onerror = () => setError('Erreur de connexion WebSocket');
-    ws.onclose = () => console.log('WS fermé');
 
-    return () => ws.close();
-  }, [tableId, user.username]);
+    connectWebSocket();
+
+    return () => {
+      isMounted = false;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, [tableId, user.wsToken]);
 
   // Actions
   const handlePlaceBet = (amount) => {

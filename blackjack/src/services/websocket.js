@@ -4,7 +4,8 @@ let onGameStateChange = null;
 export function connect(tableId, pseudo) {
   return new Promise((resolve, reject) => {
     try {
-      ws = new WebSocket(`ws://localhost:8080/ws/blackjack/${tableId}/${pseudo}`);
+      const host = window.location.hostname;
+      ws = new WebSocket(`ws://${host}:8080/ws/blackjack/${tableId}/${pseudo}`);
 
       ws.onopen = () => {
         console.log('WebSocket connecté:', tableId, pseudo);
