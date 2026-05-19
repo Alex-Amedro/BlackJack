@@ -1,31 +1,43 @@
 package n7.fr.BlackJack.websocket;
 
-import org.springframework.stereotype.Component;
-import org.springframework.web.socket.*;
-import org.springframework.web.socket.handler.TextWebSocketHandler;
-
-import n7.fr.BlackJack.game.*;
-import n7.fr.BlackJack.service.TableManager;
-import com.google.gson.Gson;
-
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
+
+import com.google.gson.Gson;
+
+import n7.fr.BlackJack.game.Carte;
+import n7.fr.BlackJack.game.Main;
+import n7.fr.BlackJack.game.TableDeBlackjack;
+import n7.fr.BlackJack.service.AuthTokenService;
+import n7.fr.BlackJack.service.TableManager;
 
 @Component
 public class BlackjackWebSocketHandler extends TextWebSocketHandler {
 
     private final TableManager tableManager;
     private static final Gson gson = new Gson();
+    private final AuthTokenService authTokenService;
 
     private final Map<String, Set<WebSocketSession>> tableSessions = new ConcurrentHashMap<>();
     private final Map<String, String> sessionPseudo = new ConcurrentHashMap<>();
     private final Map<String, String> sessionTableId = new ConcurrentHashMap<>();
 
-    public BlackjackWebSocketHandler(TableManager tableManager) {
+    public BlackjackWebSocketHandler(TableManager tableManager, AuthTokenService authTokenService) {
         this.tableManager = tableManager;
+        this.authTokenService = authTokenService;
     }
 
     @Override
@@ -38,7 +50,15 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
         }
 
         String tableId = URLDecoder.decode(parts[3], StandardCharsets.UTF_8);
-        String pseudo = URLDecoder.decode(parts[4], StandardCharsets.UTF_8);
+        String token = URLDecoder.decode(parts[4], StandardCharsets.UTF_8);
+
+        // Security Check: Look up the real pseudo using the secure token
+        String pseudo = authTokenService.getPseudoAndRemoveToken(token);
+        if (pseudo == null) {
+            System.err.println("WS connexion refusée: Token invalide !");
+            session.close(CloseStatus.NOT_ACCEPTABLE);
+            return;
+        }
 
         sessionPseudo.put(session.getId(), pseudo);
         sessionTableId.put(session.getId(), tableId);
