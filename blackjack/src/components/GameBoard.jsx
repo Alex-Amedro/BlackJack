@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import './GameBoard.css';
 
-function GameBoard({ user, table, onLogout }) {
+function GameBoard({ user, table, onLeaveTable }) {
   const [gameState, setGameState] = useState(null);
   const [betAmount, setBetAmount] = useState('');
   const [loading, setLoading] = useState(true);
@@ -112,7 +112,7 @@ function GameBoard({ user, table, onLogout }) {
           <span className="gb-badge">Manche {gameState.roundNumber || '-'}</span>
           <span className="gb-badge gb-balance">${me.balance ?? 0}</span>
         </div>
-        <button onClick={onLogout} className="gb-logout">Quitter</button>
+        <button onClick={onLeaveTable} className="gb-logout">Quitter</button>
       </header>
 
       {error && <div className="gb-error">{error}</div>}

@@ -45,6 +45,12 @@ function App() {
         setCurrentPage('login'); // On le renvoie sur l'écran de connexion
     };
 
+    // Fonction pour quitter la table sans se déconnecter
+    const handleLeaveTable = () => {
+        setSelectedTable(null);
+        setCurrentPage('waiting');
+    };
+
 
     // ---- AFFICHAGE ----
 
@@ -73,7 +79,7 @@ function App() {
             <GameBoard
                 user={user}
                 table={selectedTable}
-                onLogout={handleLogout}
+                onLeaveTable={handleLeaveTable}
             />
         );
     }
