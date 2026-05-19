@@ -72,6 +72,7 @@ function GameBoard({ user, table, onLeaveTable }) {
   };
   const handleHit = () => sendAction('HIT');
   const handleStand = () => sendAction('STAND');
+  const handleDouble = () => sendAction('DOUBLE');
   const handleNewRound = () => sendAction('START');
 
   // Card image helpers
@@ -224,6 +225,9 @@ function GameBoard({ user, table, onLeaveTable }) {
                   <div className="gb-actions">
                     <button className="gb-action gb-hit" onClick={handleHit}>TIRER</button>
                     <button className="gb-action gb-stand" onClick={handleStand}>RESTER</button>
+                    {me.balance >= me.bet && (
+                        <button className="gb-action gb-double" onClick={handleDouble} style={{ backgroundColor: '#f1c40f', color: '#000' }}>DOUBLER</button>
+                    )}
                   </div>
                 ) : (
                   <p className="gb-finished-msg">

@@ -151,6 +151,29 @@ public class TableDeBlackjack {
         joueursTermines.put(pseudo, true);
     }
 
+    public void joueurDouble(String pseudo) {
+        if (!"playing".equals(phase)) return;
+
+        int solde = soldes.getOrDefault(pseudo, 0);
+        int miseActuelle = mises.getOrDefault(pseudo, 0);
+
+        // Vérifier si le joueur a assez d'argent pour doubler sa mise
+        if (solde >= miseActuelle) {
+            // Déduire l'argent du solde et doubler la mise
+            soldes.put(pseudo, solde - miseActuelle);
+            mises.put(pseudo, miseActuelle * 2);
+
+            // Tirer exactement une carte
+            Main main = joueursMains.get(pseudo);
+            if (main != null) {
+                main.ajouterCarte(paquet.tirerCarte());
+            }
+
+            // Fin du tour obligatoire
+            joueursTermines.put(pseudo, true);
+        }
+    }
+
     public boolean tousLesJoueursTermines() {
         for (Boolean termine : joueursTermines.values()) {
             if (!termine) return false;

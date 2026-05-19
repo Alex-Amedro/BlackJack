@@ -93,6 +93,11 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
             if (table.tousLesJoueursTermines()) {
                 table.terminerManche();
             }
+        } else if ("DOUBLE".equals(payload)) {
+            table.joueurDouble(pseudo);
+            if (table.tousLesJoueursTermines()) {
+                table.terminerManche();
+            }
         } else if ("START".equals(payload)) {
             table.lancerTourDeMise();
         } else if (payload.startsWith("BET:")) {
