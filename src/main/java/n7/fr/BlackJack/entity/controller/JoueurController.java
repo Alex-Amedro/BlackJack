@@ -63,8 +63,8 @@ public class JoueurController {
         }
 
         Joueur joueur = new Joueur(pseudo.trim());
-        String hashedMap = BCrypt.hashpw(mdp, BCrypt.gensalt());
-        joueur.setMdp(hashedMap);
+        String hashedMdp = BCrypt.hashpw(mdp, BCrypt.gensalt());
+        joueur.setMdp(hashedMdp);
         Joueur saved = joueurRepository.save(joueur);
 
         String token = authTokenService.generateToken(saved.getPseudo());
