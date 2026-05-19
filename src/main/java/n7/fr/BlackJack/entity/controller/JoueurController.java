@@ -1,13 +1,25 @@
 package n7.fr.BlackJack.entity.controller;
 
-import n7.fr.BlackJack.entity.Joueur;
-import n7.fr.BlackJack.repository.JoueurRepository;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import n7.fr.BlackJack.entity.Joueur;
+import n7.fr.BlackJack.repository.JoueurRepository;
+import n7.fr.BlackJack.service.AuthTokenService;
 
 @RestController
 @RequestMapping("/api/joueurs")
@@ -16,6 +28,9 @@ public class JoueurController {
 
     @Autowired
     private JoueurRepository joueurRepository;
+
+    @Autowired
+    private AuthTokenService authTokenService;
 
     /**
      * Inscription : pseudo + mdp requis, pseudo unique en base.
@@ -48,13 +63,16 @@ public class JoueurController {
         }
 
         Joueur joueur = new Joueur(pseudo.trim());
-        joueur.setMdp(mdp);
+        String hashedMap = BCrypt.hashpw(mdp, BCrypt.gensalt());
+        joueur.setMdp(hashedMap);
         Joueur saved = joueurRepository.save(joueur);
 
+        String token = authTokenService.generateToken(saved.getPseudo());
         return ResponseEntity.ok(Map.of(
                 "id", saved.getId(),
                 "pseudo", saved.getPseudo(),
-                "solde", saved.getSolde()
+                "solde", saved.getSolde(),
+                "wsToken", token
         ));
     }
 
@@ -76,15 +94,17 @@ public class JoueurController {
         }
 
         Joueur existant = joueurRepository.findByPseudo(pseudo.trim());
-        if (existant == null || !existant.getMdp().equals(mdp)) {
+        if (existant == null || !BCrypt.checkpw(mdp, existant.getMdp())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Pseudo ou mot de passe incorrect."));
         }
 
+        String token = authTokenService.generateToken(existant.getPseudo());
         return ResponseEntity.ok(Map.of(
                 "id", existant.getId(),
                 "pseudo", existant.getPseudo(),
-                "solde", existant.getSolde()
+                "solde", existant.getSolde(),
+                "wsToken", token
         ));
     }
 

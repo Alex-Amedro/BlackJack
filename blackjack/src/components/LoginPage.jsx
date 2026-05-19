@@ -62,6 +62,7 @@ function LoginPage({ onLogin }) {
           username: player.pseudo,
           pseudo: player.pseudo,
           solde: player.solde,
+          wsToken: player.wsToken
         });
       }
     } catch (err) {
