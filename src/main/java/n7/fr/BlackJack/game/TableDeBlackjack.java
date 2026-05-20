@@ -34,11 +34,11 @@ public class TableDeBlackjack {
 
     // ─── Gestion des joueurs ───────────────────────────────
 
-    public void ajouterJoueur(String pseudo) {
+    public void ajouterJoueur(String pseudo, int soldeEnBanque) {
         if (joueursMains.containsKey(pseudo)) return;
         joueursMains.put(pseudo, new Main());
         mises.put(pseudo, 0);
-        soldes.put(pseudo, 1000);
+        soldes.put(pseudo, soldeEnBanque);
         joueursTermines.put(pseudo, false);
         joueursTerminesMise.put(pseudo, false);
 

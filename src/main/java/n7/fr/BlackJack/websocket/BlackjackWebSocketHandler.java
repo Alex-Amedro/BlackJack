@@ -30,14 +30,16 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
     private final TableManager tableManager;
     private static final Gson gson = new Gson();
     private final AuthTokenService authTokenService;
+    private final n7.fr.BlackJack.repository.JoueurRepository joueurRepository;
 
     private final Map<String, Set<WebSocketSession>> tableSessions = new ConcurrentHashMap<>();
     private final Map<String, String> sessionPseudo = new ConcurrentHashMap<>();
     private final Map<String, String> sessionTableId = new ConcurrentHashMap<>();
 
-    public BlackjackWebSocketHandler(TableManager tableManager, AuthTokenService authTokenService) {
+    public BlackjackWebSocketHandler(TableManager tableManager, AuthTokenService authTokenService, n7.fr.BlackJack.repository.JoueurRepository joueurRepository) {
         this.tableManager = tableManager;
         this.authTokenService = authTokenService;
+        this.joueurRepository = joueurRepository;
     }
 
     @Override
@@ -87,16 +89,19 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
             table.joueurTire(pseudo);
             if (table.tousLesJoueursTermines()) {
                 table.terminerManche();
+                syncBalancesWithDatabase(table); // SAUVEGARDER
             }
         } else if ("STAND".equals(payload)) {
             table.joueurStand(pseudo);
             if (table.tousLesJoueursTermines()) {
                 table.terminerManche();
+                syncBalancesWithDatabase(table); // SAUVEGARDER
             }
         } else if ("DOUBLE".equals(payload)) {
             table.joueurDouble(pseudo);
             if (table.tousLesJoueursTermines()) {
                 table.terminerManche();
+                syncBalancesWithDatabase(table); // SAUVEGARDER
             }
         } else if ("START".equals(payload)) {
             table.lancerTourDeMise();
@@ -104,6 +109,7 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
             try {
                 int amount = Integer.parseInt(payload.substring(4));
                 table.placerMise(pseudo, amount);
+                syncBalancesWithDatabase(table); // SAUVEGARDER LA MISE (Dédouanement)
             } catch (NumberFormatException ignored) {}
         }
 
@@ -233,5 +239,15 @@ public class BlackjackWebSocketHandler extends TextWebSocketHandler {
             players.put(pseudo, p);
         }
         return players;
+    }
+
+    private void syncBalancesWithDatabase(TableDeBlackjack table) {
+        for (String pseudo : table.getJoueurs()) {
+            n7.fr.BlackJack.entity.Joueur joueur = joueurRepository.findByPseudo(pseudo);
+            if (joueur != null) {
+                joueur.setSolde(table.getSolde(pseudo));
+                joueurRepository.save(joueur);
+            }
+        }
     }
 }
