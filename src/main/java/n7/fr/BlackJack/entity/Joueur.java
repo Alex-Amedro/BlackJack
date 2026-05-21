@@ -3,13 +3,7 @@ package n7.fr.BlackJack.entity;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import n7.fr.BlackJack.game.Main;
 
 @Entity 
@@ -19,6 +13,7 @@ public class Joueur {
     @GeneratedValue(strategy = GenerationType.IDENTITY) 
     private int id;
     
+    @Column(unique = true)
     private String pseudo;
 
     private String mdp; 
@@ -28,11 +23,13 @@ public class Joueur {
     @ManyToMany
     private Collection<Match> matchs;
 
-    @OneToMany 
-    private Collection<Invitation> invitations;
-
-    @OneToMany
-    private Collection<Message> messages;
+    @ManyToMany
+    @JoinTable(
+        name = "joueur_amis",
+        joinColumns = @JoinColumn(name = "joueur_id"),
+        inverseJoinColumns = @JoinColumn(name = "ami_id")
+    )
+    private Collection<Joueur> amis;
 
     @Transient // game.Main is an in-memory model, not a JPA-mapped type
     private Main main;
@@ -41,9 +38,8 @@ public class Joueur {
     public Joueur() {
         this.solde = 1000;
         this.mdp = "";
-        this.invitations = new ArrayList<>();
-        this.messages = new ArrayList<>();
         this.matchs = new ArrayList<>();
+        this.amis = new ArrayList<>();
         this.main = new Main();
     }
 
@@ -51,9 +47,8 @@ public class Joueur {
         this.pseudo = pseudo;
         this.solde = 1000;
         this.mdp = "";
-        this.invitations = new ArrayList<>();
-        this.messages = new ArrayList<>();
         this.matchs = new ArrayList<>();
+        this.amis = new ArrayList<>();
     }
 
     public int getId() { return this.id; }
@@ -71,20 +66,13 @@ public class Joueur {
     public String getPseudo() { return this.pseudo; }
     public void setPseudo(String pseudo) { this.pseudo = pseudo; }
 
-    public Collection<Invitation> getInvitations() {return this.invitations;}
-    public void addInvitation(Invitation invit) {this.invitations.add(invit);}
-    
-    public Collection<Message> getMessages() {return this.messages;}
-    public void addMessages(Message sms) {this.messages.add(sms);}
+    public String getMdp() { return this.mdp; }
+    public void setMdp(String mdp) { this.mdp = mdp; }
     
     public Collection<Match> getMatchs() {return this.matchs;}
     public void addMatch(Match game) {this.matchs.add(game);}
 
-    public String getMdp() {
-        return mdp;
-    }
-
-    public void setMdp(String mdp) {
-        this.mdp = mdp;
-    }
+    public Collection<Joueur> getAmis() { return this.amis; }
+    public void addAmi(Joueur ami) { this.amis.add(ami); }
+    public void removeAmi(Joueur ami) { this.amis.remove(ami); }
 }

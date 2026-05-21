@@ -6,12 +6,20 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import n7.fr.BlackJack.game.Carte;
 import n7.fr.BlackJack.game.Main;
 import n7.fr.BlackJack.game.TableDeBlackjack;
+import n7.fr.BlackJack.repository.JoueurRepository;
 import n7.fr.BlackJack.service.TableManager;
+import n7.fr.BlackJack.websocket.BlackjackWebSocketHandler;
 
 @RestController
 @RequestMapping("/api/tables")
@@ -20,6 +28,12 @@ public class TableController {
 
     @Autowired
     private TableManager tableManager;
+
+    @Autowired
+    private BlackjackWebSocketHandler wsHandler;
+
+    @Autowired
+    private JoueurRepository joueurRepository;
 
     @GetMapping
     public List<Map<String, Object>> listTables() {
@@ -43,54 +57,14 @@ public class TableController {
             throw new RuntimeException("Table non trouvée");
         }
 
-        table.ajouterJoueur(pseudo);
-        if (table.getJoueurs().size() == 2) {
-            table.demarrerManche();
-        }
+        // Récupérer le solde réel dans la DB
+        n7.fr.BlackJack.entity.Joueur joueur = joueurRepository.findByPseudo(pseudo);
+        int realSolde = (joueur != null) ? joueur.getSolde() : 1000;
 
-        return buildSnapshot(table);
-    }
+        table.ajouterJoueur(pseudo, realSolde); // Passer le solde au moteur de jeu
 
-    @PostMapping("/{tableId}/bet")
-    public Map<String, Object> placeBet(@PathVariable String tableId, @RequestParam String pseudo, @RequestParam int amount) {
-        TableDeBlackjack table = tableManager.getTable(tableId);
-        if (table == null) {
-            throw new RuntimeException("Table non trouvée");
-        }
-
-        table.placerMise(pseudo, amount);
-        return buildSnapshot(table);
-    }
-
-    @PostMapping("/{tableId}/hit")
-    public Map<String, Object> playerHit(@PathVariable String tableId, @RequestParam String pseudo) {
-        TableDeBlackjack table = tableManager.getTable(tableId);
-        if (table == null) {
-            throw new RuntimeException("Table non trouvée");
-        }
-
-        table.joueurTire(pseudo);
-
-        if (table.tousLesJoueursTermines()) {
-            table.terminerManche();
-        }
-
-        return buildSnapshot(table);
-    }
-
-    @PostMapping("/{tableId}/stand")
-    public Map<String, Object> playerStand(@PathVariable String tableId, @RequestParam String pseudo) {
-        TableDeBlackjack table = tableManager.getTable(tableId);
-        if (table == null) {
-            throw new RuntimeException("Table non trouvée");
-        }
-
-        table.joueurStand(pseudo);
-
-        if (table.tousLesJoueursTermines()) {
-            table.terminerManche();
-        }
-
+        // Notifier tous les clients WS connectés
+        wsHandler.broadcastState(tableId);
         return buildSnapshot(table);
     }
 
@@ -100,7 +74,6 @@ public class TableController {
         if (table == null) {
             throw new RuntimeException("Table non trouvée");
         }
-
         return buildSnapshot(table);
     }
 
@@ -111,12 +84,12 @@ public class TableController {
         info.put("playerCount", table.getJoueurs().size());
         info.put("maxPlayers", 7);
         info.put("roundNumber", table.getNumeroManche());
-        info.put("phase", table.estMancheTerminee() ? "results" : (table.getNumeroManche() > 0 ? "playing" : "waiting"));
+        info.put("phase", table.getPhase());
         info.put("dealerCards", mapCards(table.getMainCroupier()));
         info.put("dealerScore", table.getMainCroupier().calculerScore());
         info.put("players", buildPlayers(table));
 
-        if (table.estMancheTerminee()) {
+        if ("results".equals(table.getPhase())) {
             info.put("resultats", table.determinerResultats());
         }
 

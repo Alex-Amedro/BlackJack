@@ -1,260 +1,287 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import './GameBoard.css';
-import { getTable, hit, placeBet, stand } from '../services/api';
 
-function GameBoard({ user, table, onLogout }) {
+function GameBoard({ user, table, onLeaveTable }) {
   const [gameState, setGameState] = useState(null);
   const [betAmount, setBetAmount] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const wsRef = useRef(null);
 
   const tableId = table?.id;
 
+  const sendAction = useCallback((action) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(action);
+    }
+  }, []);
+
   useEffect(() => {
-    let active = true;
+    if (!tableId) { setLoading(false); return; }
 
-    const loadTable = async () => {
-      if (!tableId) {
-        setLoading(false);
-        return;
-      }
+    let reconnectTimeout = null;
+    let isMounted = true;
 
-      setLoading(true);
-      setError('');
-      try {
-        const snapshot = await getTable(tableId);
-        if (active) {
-          setGameState(snapshot);
+    const connectWebSocket = () => {
+      const host = window.location.hostname;
+      // We now pass user.wsToken instead of user.username!
+      const ws = new WebSocket(`ws://${host}:8080/ws/blackjack/${tableId}/${user.wsToken}`);
+      wsRef.current = ws;
+
+      ws.onopen = () => { 
+        if (isMounted) setLoading(false); 
+        ws.send('REFRESH'); 
+      };
+      
+      ws.onmessage = (e) => {
+        try { 
+          if (isMounted) setGameState(JSON.parse(e.data)); 
+          if (isMounted) setLoading(false); 
         }
-      } catch (err) {
-        if (active) {
-          setError(err.message || 'Unable to load table state');
+        catch (err) { console.error('WS parse error:', err); }
+      };
+
+      ws.onerror = () => {
+        if (isMounted) setError('Erreur de connexion WebSocket');
+      };
+
+      ws.onclose = () => {
+        console.log('WS fermé. Tentative de reconnexion dans 3 secondes...');
+        if (isMounted) {
+          reconnectTimeout = setTimeout(connectWebSocket, 3000);
         }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
+      };
     };
 
-    loadTable();
+    connectWebSocket();
 
     return () => {
-      active = false;
+      isMounted = false;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (wsRef.current) wsRef.current.close();
     };
-  }, [tableId]);
+  }, [tableId, user.wsToken]);
 
-  const playerState = useMemo(() => {
-    return gameState?.players?.[user.username] || null;
-  }, [gameState, user.username]);
-
-  const refreshState = async (nextState) => {
-    setGameState(nextState);
+  // Actions
+  const handlePlaceBet = (amount) => {
+    const n = Number(amount);
+    if (!n || n <= 0) return;
+    sendAction(`BET:${n}`);
+    setBetAmount('');
   };
+  const handleHit = () => sendAction('HIT');
+  const handleStand = () => sendAction('STAND');
+  const handleDouble = () => sendAction('DOUBLE');
+  const handleNewRound = () => sendAction('START');
 
-  const handlePlaceBet = async (amount) => {
-    const parsedAmount = Number(amount);
-    if (!parsedAmount || parsedAmount <= 0) {
-      return;
-    }
+  // Card image helpers
+  const getCardImg = (name) => new URL(`../assets/card_deck/${name}.png`, import.meta.url).href;
+  const backImg = new URL('../assets/card_deck/pioche_bleue.png', import.meta.url).href;
 
-    try {
-      const nextState = await placeBet(tableId, user.username, parsedAmount);
-      await refreshState(nextState);
-      setBetAmount('');
-    } catch (err) {
-      setError(err.message || 'Unable to place bet');
-    }
-  };
+  const Card = ({ name, hidden }) => (
+    <img
+      src={hidden ? backImg : getCardImg(name)}
+      alt={hidden ? 'Hidden' : name}
+      className="card-img"
+    />
+  );
 
-  const handleHit = async () => {
-    try {
-      const nextState = await hit(tableId, user.username);
-      await refreshState(nextState);
-    } catch (err) {
-      setError(err.message || 'Unable to hit');
-    }
-  };
-
-  const handleStand = async () => {
-    try {
-      const nextState = await stand(tableId, user.username);
-      await refreshState(nextState);
-    } catch (err) {
-      setError(err.message || 'Unable to stand');
-    }
-  };
-
-  const getCardImage = (cardName) => new URL(`../assets/card_deck/${cardName}.png`, import.meta.url).href;
-
-  const CardImage = ({ cardName, hidden = false }) => {
-    if (hidden) {
-      return <img src={new URL('../assets/card_deck/pioche_bleue.png', import.meta.url).href} alt="Hidden card" className="card-image" />;
-    }
-
-    return <img src={getCardImage(cardName)} alt={cardName} className="card-image" />;
-  };
-
+  // Loading
   if (loading || !gameState) {
     return (
-      <div className="game-container">
-        <header className="game-header">
-          <h1>♠ BlackJack ♠</h1>
-          <div className="user-info">
-            <span>
-              Welcome, <strong>{user.username}</strong>!
-            </span>
-            <button onClick={onLogout} className="logout-btn">
-              Logout
-            </button>
-          </div>
-        </header>
-        <main className="game-main">
-          <p className="game-message">Loading table...</p>
-        </main>
+      <div className="gb-root">
+        <div className="gb-loading"><div className="gb-spinner" /><p>Connexion à la table...</p></div>
       </div>
     );
   }
 
-  const currentPhase = gameState.phase || (gameState.resultats ? 'results' : 'playing');
-  const otherPlayers = Object.entries(gameState.players || {}).filter(([pseudo]) => pseudo !== user.username);
+  const phase = gameState.phase || 'waiting';
+  const allPlayers = gameState.players || {};
+  const me = allPlayers[user.username] || {};
+  const others = Object.entries(allPlayers).filter(([p]) => p !== user.username);
+  const resultats = gameState.resultats || {};
+  const myResult = resultats[user.username];
 
   return (
-    <div className="game-container">
-      <header className="game-header">
+    <div className="gb-root">
+      {/* Header */}
+      <header className="gb-header">
         <h1>♠ BlackJack ♠</h1>
-        <div className="user-info">
-          <span>
-            Welcome, <strong>{user.username}</strong>!
-          </span>
-          <span className="table-info-header">Table: {gameState.name || table?.name} | Round {gameState.roundNumber ?? 0}</span>
-          <button onClick={onLogout} className="logout-btn">
-            Logout
-          </button>
+        <div className="gb-header-info">
+          <span className="gb-badge">{gameState.name}</span>
+          <span className="gb-badge">Manche {gameState.roundNumber || '-'}</span>
+          <span className="gb-badge gb-balance">${me.balance ?? 0}</span>
         </div>
+        <button onClick={onLeaveTable} className="gb-logout">Quitter</button>
       </header>
 
-      <main className="game-main">
-        {error && <p className="game-message">{error}</p>}
+      {error && <div className="gb-error">{error}</div>}
 
-        {currentPhase === 'waiting' && (
-          <div className="betting-phase">
-            <h2>Waiting for the round to start</h2>
-            <p className="waiting-text">The table is waiting for more players.</p>
-          </div>
-        )}
+      {/* Table de jeu */}
+      <div className="gb-table">
+        <div className="gb-felt">
 
-        {currentPhase === 'playing' && (
-          <>
-            <div className="betting-phase">
-              <h2>Place Your Bet</h2>
-              <div className="balance-display">
-                <p>
-                  Balance: <strong>${playerState?.balance ?? 0}</strong>
-                </p>
-              </div>
-              <div className="betting-controls">
-                <div className="bet-input-group">
-                  <label>Bet Amount:</label>
-                  <input
-                    type="number"
-                    placeholder="Enter amount"
-                    min="1"
-                    value={betAmount}
-                    onChange={(e) => setBetAmount(e.target.value)}
-                  />
-                </div>
-                <div className="quick-bets">
-                  <button className="quick-bet" onClick={() => handlePlaceBet(10)}>$10</button>
-                  <button className="quick-bet" onClick={() => handlePlaceBet(50)}>$50</button>
-                  <button className="quick-bet" onClick={() => handlePlaceBet(100)}>$100</button>
-                </div>
-                <button className="place-bet-btn" onClick={() => handlePlaceBet(betAmount)}>
-                  Place Bet
-                </button>
-              </div>
+          {/* PHASE: WAITING */}
+          {phase === 'waiting' && (
+            <div className="gb-center-msg">
+
+              <h2>En attente de joueurs...</h2>
+              <p>La partie commence dès qu'un 2ème joueur rejoint.</p>
+              <p className="gb-player-count">{Object.keys(allPlayers).length} / 7 joueurs</p>
             </div>
+          )}
 
-            <div className="dealer-zone">
-              <h3>Dealer</h3>
-              <div className="cards-display">
-                {(gameState.dealerCards || []).map((card, idx) => (
-                  <CardImage key={`${card}-${idx}`} cardName={card} hidden={idx === 1} />
+          {/* PHASE: BETTING */}
+          {phase === 'betting' && (
+            <div className="gb-betting">
+              <div className="gb-betting-header">
+                <h2>Tour de mise - Manche {gameState.roundNumber}</h2>
+              </div>
+
+              <div className="gb-other-bets">
+                {others.map(([pseudo, p]) => (
+                  <div key={pseudo} className={`gb-other-bet ${p.hasBet ? 'has-bet' : ''}`}>
+                    <span className="gb-other-name">{pseudo}</span>
+                    <span className="gb-other-status">
+                      {p.hasBet ? `Misé $${p.bet}` : 'En attente...'}
+                    </span>
+                  </div>
                 ))}
               </div>
-              <p className="score">
-                Score: <strong>{gameState.dealerScore ?? 0}</strong>
-              </p>
-            </div>
 
-            <div className="table-separator"></div>
-
-            <div className="other-players-zone">
-              {otherPlayers.map(([pseudo, player]) => (
-                <div key={pseudo} className="other-player-card">
-                  <h4>{pseudo}</h4>
-                  <div className="cards-display">
-                    {(player.cards || []).map((card, idx) => (
-                      <CardImage key={`${pseudo}-${card}-${idx}`} cardName={card} />
+              {!me.hasBet ? (
+                <div className="gb-my-bet">
+                  <p className="gb-my-balance">Votre solde : <strong>${me.balance ?? 0}</strong></p>
+                  <div className="gb-chips">
+                    {[10, 25, 50, 100, 250].map((v) => (
+                      <button key={v} className="gb-chip" onClick={() => handlePlaceBet(v)}
+                        disabled={(me.balance ?? 0) < v}>
+                        ${v}
+                      </button>
                     ))}
                   </div>
-                  <div className="player-info">
-                    <p>
-                      Score: <strong>{player.score ?? 0}</strong>
-                    </p>
-                    <p>
-                      Bet: <strong>${player.bet ?? 0}</strong>
-                    </p>
+                  <div className="gb-bet-custom">
+                    <input type="number" placeholder="Montant..." min="1"
+                      value={betAmount} onChange={(e) => setBetAmount(e.target.value)} />
+                    <button className="gb-bet-btn" onClick={() => handlePlaceBet(betAmount)}>Miser</button>
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div className="gb-bet-waiting">
+                  <p>Votre mise : <strong>${me.bet}</strong></p>
+                  <p className="gb-dim">En attente des autres joueurs...</p>
+                </div>
+              )}
             </div>
+          )}
 
-            <div className="player-zone">
-              <div className="my-hand">
-                <h3>Your Hand</h3>
-                <div className="cards-display">
-                  {(playerState?.cards || []).map((card, idx) => (
-                    <CardImage key={`${card}-${idx}`} cardName={card} />
+          {/* PHASE: PLAYING */}
+          {phase === 'playing' && (
+            <>
+              {/* Dealer */}
+              <div className="gb-dealer">
+                <h3 className="gb-zone-title">Croupier</h3>
+                <div className="gb-cards">
+                  {(gameState.dealerCards || []).map((c, i) => (
+                    <Card key={`d-${i}`} name={c} hidden={i === 1} />
                   ))}
                 </div>
-                <div className="player-info">
-                  <p>
-                    Score: <strong>{playerState?.score ?? 0}</strong>
+              </div>
+
+              {/* Separator */}
+              <div className="gb-separator" />
+
+              {/* Other players */}
+              {others.length > 0 && (
+                <div className="gb-others">
+                  {others.map(([pseudo, p]) => (
+                    <div key={pseudo} className={`gb-player-card ${p.finished ? 'finished' : ''}`}>
+                      <h4>{pseudo}</h4>
+                      <div className="gb-cards">
+                        {(p.cards || []).map((c, i) => <Card key={`${pseudo}-${i}`} name={c} />)}
+                      </div>
+                      <div className="gb-player-stats">
+                        <span>Score: {p.score}</span>
+                        <span>Mise: ${p.bet}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* My hand */}
+              <div className="gb-me">
+                <h3 className="gb-zone-title">Votre main</h3>
+                <div className="gb-cards gb-my-cards">
+                  {(me.cards || []).map((c, i) => <Card key={`me-${i}`} name={c} />)}
+                </div>
+                <div className="gb-my-stats">
+                  <span className="gb-stat">Score: <strong>{me.score ?? 0}</strong></span>
+                  <span className="gb-stat">Mise: <strong>${me.bet ?? 0}</strong></span>
+                  <span className="gb-stat">Solde: <strong>${me.balance ?? 0}</strong></span>
+                </div>
+                {!me.finished ? (
+                  <div className="gb-actions">
+                    <button className="gb-action gb-hit" onClick={handleHit}>TIRER</button>
+                    <button className="gb-action gb-stand" onClick={handleStand}>RESTER</button>
+                    {me.balance >= me.bet && (
+                        <button className="gb-action gb-double" onClick={handleDouble} style={{ backgroundColor: '#f1c40f', color: '#000' }}>DOUBLER</button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="gb-finished-msg">
+                    {me.score > 21 ? 'Bust !' : 'Vous avez terminé.'}
                   </p>
-                  <p>
-                    Balance: <strong>${playerState?.balance ?? 0}</strong>
-                  </p>
-                  <p>
-                    Your Bet: <strong>${playerState?.bet ?? 0}</strong>
-                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* PHASE: RESULTS */}
+          {phase === 'results' && (
+            <div className="gb-results">
+              <h2>Résultats - Manche {gameState.roundNumber}</h2>
+
+              {/* Dealer final */}
+              <div className="gb-dealer-result">
+                <h3>Croupier - Score: {gameState.dealerScore}</h3>
+                <div className="gb-cards">
+                  {(gameState.dealerCards || []).map((c, i) => <Card key={`dr-${i}`} name={c} />)}
                 </div>
               </div>
 
-              <div className="action-buttons">
-                <button className="action-btn hit-btn" onClick={handleHit}>
-                  HIT
-                </button>
-                <button className="action-btn stand-btn" onClick={handleStand}>
-                  STAND
-                </button>
+              {/* All results */}
+              <div className="gb-results-list">
+                {Object.entries(allPlayers).map(([pseudo, p]) => {
+                  const res = resultats[pseudo] || '';
+                  const isMe = pseudo === user.username;
+                  return (
+                    <div key={pseudo} className={`gb-result-card ${res.toLowerCase()} ${isMe ? 'is-me' : ''}`}>
+                      <h4>{isMe ? 'Vous' : pseudo}</h4>
+                      <div className="gb-cards gb-small-cards">
+                        {(p.cards || []).map((c, i) => <Card key={`r-${pseudo}-${i}`} name={c} />)}
+                      </div>
+                      <div className="gb-result-info">
+                        <span>Score: {p.score}</span>
+                        <span>Mise: ${p.bet}</span>
+                        <span className={`gb-result-badge ${res.toLowerCase()}`}>
+                          {res === 'WIN' ? 'Gagné' : res === 'LOSE' ? 'Perdu' : 'Égalité'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          </>
-        )}
 
-        {currentPhase === 'results' && (
-          <div className="results-phase">
-            <h2>Round Results</h2>
-            <div className="results-display">
-              <p className="result-message">{JSON.stringify(gameState.resultats || {})}</p>
-              <p className="balance-update">
-                Dealer score: <strong>{gameState.dealerScore ?? 0}</strong>
-              </p>
+              <button className="gb-new-round" onClick={handleNewRound}>
+                Nouvelle manche
+              </button>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+
+        </div>
+      </div>
     </div>
   );
 }

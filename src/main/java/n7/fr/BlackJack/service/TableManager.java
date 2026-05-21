@@ -11,8 +11,8 @@ import n7.fr.BlackJack.game.TableDeBlackjack;
 
 @Service
 public class TableManager {
-    private static Map<String, TableDeBlackjack> tables = new HashMap<>();
-    private static int tableCounter = 1;
+    private final Map<String, TableDeBlackjack> tables = new HashMap<>();
+    private int tableCounter = 1;
 
     // Créer une nouvelle table
     public TableDeBlackjack createTable() {
@@ -25,6 +25,11 @@ public class TableManager {
     // Récupérer une table
     public TableDeBlackjack getTable(String tableId) {
         return tables.get(tableId);
+    }
+
+    // Supprimer une table (quand elle est vide)
+    public void removeTable(String tableId) {
+        tables.remove(tableId);
     }
     
     // Lister toutes les tables
